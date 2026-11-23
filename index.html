@@ -156,12 +156,11 @@
         <div class="category-scroll-track" id="category-pills">
           <!-- Populated dynamically by JS -->
         </div>
-        <button type="button" id="refresh-catalog-btn" class="refresh-catalog-btn" title="تحديث القائمة من Google Sheets">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+        <button type="button" id="refresh-catalog-btn" class="refresh-catalog-btn" aria-label="تحديث القائمة" title="تحديث القائمة من Google Sheets">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2">
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
           </svg>
-          <span>تحديث القائمة</span>
         </button>
       </div>
     </nav>
@@ -223,7 +222,7 @@
             <span class="footer-sep" aria-hidden="true">·</span>
             <span class="footer-meta-item">الدفع عند الاستلام</span>
             <span class="footer-sep" aria-hidden="true">·</span>
-            <span class="footer-meta-item">محافظ إلكترونية وإنستاباي</span>
+            <span class="footer-meta-item">محافظ إلكترونية</span>
           </div>
         </div>
 
@@ -231,12 +230,13 @@
           <h3 class="support-card-title">خدمة العملاء والشكاوى</h3>
           <p class="support-card-desc">للاستفسارات أو متابعة الطلبات أو الشكاوى، تواصل معنا مباشرة:</p>
           <div class="support-number-row">
-            <span class="support-phone-display" dir="ltr">0 12 3456789</span>
+            <span class="support-phone-display" id="footer-support-display" dir="ltr">0 12 3456789</span>
             <div class="support-actions">
-              <button type="button" class="btn-copy-support" data-copy="0123456789">
+              <button type="button" class="btn-copy-support" id="footer-support-copy" data-copy="0123456789">
                 نسخ الرقم
               </button>
               <a
+                id="footer-support-whatsapp"
                 href="https://wa.me/20123456789"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -419,19 +419,30 @@
               <label>اختر وسيلة الدفع <span class="req">*</span></label>
               <div class="payment-methods-grid" id="payment-methods-grid">
                 <button type="button" class="payment-option-card active" data-method="Vodafone Cash" data-color="vodafone">
-                  <span class="pay-logo pay-logo-vodafone">V</span>
+                  <img
+                    src="https://res.cloudinary.com/h74mxqsb/image/upload/v1793911571/Vodafone-Cash_xuedki.png"
+                    alt="فودافون كاش"
+                    class="pay-logo-img"
+                    referrerpolicy="no-referrer"
+                  />
                   <span class="pay-name">فودافون كاش</span>
                 </button>
-                <button type="button" class="payment-option-card" data-method="InstaPay" data-color="instapay">
-                  <span class="pay-logo pay-logo-instapay">IP</span>
-                  <span class="pay-name">إنستاباي</span>
-                </button>
                 <button type="button" class="payment-option-card" data-method="Orange Cash" data-color="orange">
-                  <span class="pay-logo pay-logo-orange">O</span>
+                  <img
+                    src="https://res.cloudinary.com/h74mxqsb/image/upload/v1793911571/Orange-Cash_fn9kac.png"
+                    alt="أورانج كاش"
+                    class="pay-logo-img"
+                    referrerpolicy="no-referrer"
+                  />
                   <span class="pay-name">أورانج كاش</span>
                 </button>
                 <button type="button" class="payment-option-card" data-method="Etisalat Cash" data-color="etisalat">
-                  <span class="pay-logo pay-logo-etisalat">E</span>
+                  <img
+                    src="https://res.cloudinary.com/h74mxqsb/image/upload/v1793911571/Etisalat-Cash_vjact8.png"
+                    alt="اتصالات كاش"
+                    class="pay-logo-img"
+                    referrerpolicy="no-referrer"
+                  />
                   <span class="pay-name">اتصالات كاش</span>
                 </button>
                 <button type="button" class="payment-option-card payment-option-cod" data-method="COD" data-color="cod">
@@ -530,10 +541,10 @@
             <div class="success-summary-details" id="success-summary-details"></div>
 
             <div class="success-support-box">
-              <span>خدمة العملاء: <strong dir="ltr">0 12 3456789</strong></span>
+              <span>خدمة العملاء: <strong id="success-support-display" dir="ltr">0 12 3456789</strong></span>
               <div class="support-actions">
-                <button type="button" class="btn-copy-support" data-copy="0123456789">نسخ</button>
-                <a href="https://wa.me/20123456789" target="_blank" rel="noopener noreferrer" class="btn-whatsapp">واتساب</a>
+                <button type="button" class="btn-copy-support" id="success-support-copy" data-copy="0123456789">نسخ</button>
+                <a id="success-support-whatsapp" href="https://wa.me/20123456789" target="_blank" rel="noopener noreferrer" class="btn-whatsapp">واتساب</a>
               </div>
             </div>
 

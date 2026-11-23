@@ -670,15 +670,14 @@ a {
 .refresh-catalog-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
   border-radius: var(--radius-pill);
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);
-  font-size: 0.84rem;
-  font-weight: 700;
-  white-space: nowrap;
   flex-shrink: 0;
   transition: border-color 0.15s ease, color 0.15s ease;
 }
@@ -779,23 +778,24 @@ a {
   animation: spin360 0.8s linear infinite;
 }
 
-/* Responsive 1 / 2 / 3-column grid */
+/* Responsive 2 (mobile) / 3 (tablet) / 4 (desktop)-column grid */
 .products-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 720px) {
   .products-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
   }
 }
 
 @media (min-width: 1024px) {
   .products-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 22px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
   }
 }
 
@@ -975,10 +975,11 @@ a {
 }
 
 .card-price-value {
-  font-size: 1.12rem;
+  font-size: 1.42rem;
   font-weight: 900;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+  line-height: 1.15;
 }
 
 .card-actions-group {
@@ -1031,6 +1032,44 @@ a {
   box-shadow: 0 4px 12px rgba(25, 92, 70, 0.45);
   font-size: 0.82rem;
   padding-inline: 12px;
+}
+
+@media (max-width: 639px) {
+  .card-body {
+    padding: 10px 10px 12px;
+    gap: 4px;
+  }
+  .card-title {
+    font-size: 0.9rem;
+  }
+  .card-desc {
+    font-size: 0.76rem;
+    min-height: 2.4em;
+  }
+  .card-footer-row {
+    padding-top: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .card-price-value {
+    font-size: 1.22rem;
+  }
+  .btn-card-buy {
+    height: 32px;
+    padding-inline: 8px;
+    font-size: 0.74rem;
+    border-radius: var(--radius-sm);
+  }
+  .btn-card-add {
+    min-width: 34px;
+    height: 34px;
+    padding-inline: 8px;
+    font-size: 1.1rem;
+  }
+  .btn-card-add.added {
+    font-size: 0.72rem;
+    padding-inline: 8px;
+  }
 }
 
 /* =========================================================
@@ -1525,7 +1564,7 @@ a {
 
 .pm-unit-price,
 .pm-line-total {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 900;
   color: var(--accent-orange);
   font-variant-numeric: tabular-nums;
@@ -1852,18 +1891,9 @@ a {
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.payment-option-cod {
-  grid-column: 1 / -1;
-}
-
 .payment-option-card.active[data-color='vodafone'] {
   border-color: #e60000;
   background: rgba(230, 0, 0, 0.08);
-}
-
-.payment-option-card.active[data-color='instapay'] {
-  border-color: #7c3aed;
-  background: rgba(124, 58, 237, 0.1);
 }
 
 .payment-option-card.active[data-color='orange'] {
@@ -1882,30 +1912,28 @@ a {
 }
 
 .pay-logo {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: #ffffff;
   flex-shrink: 0;
 }
 
-.pay-logo-vodafone {
-  background: #e60000;
+.pay-logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 2px;
+  flex-shrink: 0;
 }
-.pay-logo-instapay {
-  background: #7c3aed;
-}
-.pay-logo-orange {
-  background: #f26522;
-}
-.pay-logo-etisalat {
-  background: #16a34a;
-}
+
 .pay-logo-cod {
   background: var(--accent-emerald);
 }

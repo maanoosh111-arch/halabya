@@ -16,6 +16,7 @@ import {
   toPublicOrder,
   updateOrderById,
   softDeleteArchivedOrders,
+  checkDatabaseConnection,
 } from './lib/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -32,7 +33,6 @@ const SESSION_COOKIE_NAME = 'chef_session';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const VALID_PAYMENT_METHODS = new Set([
   'Vodafone Cash',
-  'InstaPay',
   'Orange Cash',
   'Etisalat Cash',
   'COD',
@@ -188,9 +188,29 @@ async function startServer() {
   app.use(express.json({ limit: '16mb' }));
   app.use(express.urlencoded({ extended: true, limit: '16mb' }));
 
+  app.use('/api', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+
   // --- Public API Routes ---
-  app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, timestamp: new Date().toISOString() });
+  app.get('/api/health', async (_req, res) => {
+    const db = await checkDatabaseConnection();
+    res.json({
+      ok: true,
+      timestamp: new Date().toISOString(),
+      database: {
+        mode: db.mode,
+        configured: db.configured,
+        connected: db.connected,
+        storeSettingsOk: db.storeSettingsOk,
+        ordersOk: db.ordersOk,
+        supportNumberColumnOk: db.supportNumberColumnOk ?? false,
+        httpStatus: db.httpStatus ?? null,
+      },
+    });
   });
 
   app.get('/api/settings', async (_req, res) => {
@@ -627,11 +647,22 @@ async function startServer() {
         customerNote,
         deliveryFee,
         transferNumber,
+        supportNumber,
       } = req.body || {};
 
       const parsedFee = Number(deliveryFee);
       if (!Number.isFinite(parsedFee) || parsedFee < 0 || parsedFee > 10000) {
         return res.status(400).json({ error: 'قيمة رسوم التوصيل غير صالحة.' });
+      }
+
+      const cleanTransfer = String(transferNumber || '').trim();
+      if (!cleanTransfer || cleanTransfer.replace(/\D/g, '').length < 6) {
+        return res.status(400).json({ error: 'يرجى إدخال رقم تحويل صحيح.' });
+      }
+
+      const cleanSupport = String(supportNumber || '').trim();
+      if (!cleanSupport || cleanSupport.replace(/\D/g, '').length < 6) {
+        return res.status(400).json({ error: 'يرجى إدخال رقم خدمة العملاء والشكاوى بشكل صحيح.' });
       }
 
       const updated = await updateSettings({
@@ -640,7 +671,8 @@ async function startServer() {
         closeTime: String(closeTime || '02:00 ص').trim(),
         customerNote: String(customerNote || '').trim(),
         deliveryFee: Math.round(parsedFee * 100) / 100,
-        transferNumber: String(transferNumber || '0123456789').trim(),
+        transferNumber: cleanTransfer,
+        supportNumber: cleanSupport,
       });
 
       const { adminPinHash, ...safeSettings } = updated;

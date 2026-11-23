@@ -18,6 +18,7 @@ const state = {
     customerNote: '',
     deliveryFee: 25,
     transferNumber: '0123456789',
+    supportNumber: '0 12 3456789',
   },
   categories: [],
   products: [],
@@ -134,6 +135,17 @@ async function copyText(text, btnEl, defaultLabel) {
 // =========================================================
 // SETTINGS POLLING & STORE OPEN/CLOSED STATE
 // =========================================================
+function cleanPhoneDigits(phone) {
+  return String(phone || '').replace(/\D/g, '');
+}
+
+function formatWhatsAppUrl(phone) {
+  const digits = cleanPhoneDigits(phone);
+  if (!digits) return 'https://wa.me/20123456789';
+  if (digits.startsWith('0')) return `https://wa.me/2${digits}`;
+  return `https://wa.me/${digits}`;
+}
+
 async function fetchSettings() {
   try {
     const res = await fetch('/api/settings', { cache: 'no-store' });
@@ -146,6 +158,7 @@ async function fetchSettings() {
       customerNote: data.customerNote || '',
       deliveryFee: Number(data.deliveryFee ?? 25),
       transferNumber: data.transferNumber || '0123456789',
+      supportNumber: data.supportNumber || '0 12 3456789',
     };
     applyStoreStatusUI();
     renderCartAndCheckoutTotals();
@@ -155,7 +168,8 @@ async function fetchSettings() {
 }
 
 function applyStoreStatusUI() {
-  const { isOpen, openTime, closeTime, customerNote, deliveryFee, transferNumber } = state.settings;
+  const { isOpen, openTime, closeTime, customerNote, deliveryFee, transferNumber, supportNumber } =
+    state.settings;
 
   const alertBar = document.getElementById('closed-store-alert');
   const alertText = document.getElementById('closed-alert-text');
@@ -170,6 +184,24 @@ function applyStoreStatusUI() {
   const coTransferNum = document.getElementById('co-transfer-number');
   const proceedBtn = document.getElementById('proceed-checkout-btn');
   const submitBtn = document.getElementById('submit-order-btn');
+
+  const supportDisplay = supportNumber || '0 12 3456789';
+  const supportDigits = cleanPhoneDigits(supportDisplay) || '0123456789';
+  const supportWaUrl = formatWhatsAppUrl(supportDisplay);
+
+  const footerSupportDisplay = document.getElementById('footer-support-display');
+  const footerSupportCopy = document.getElementById('footer-support-copy');
+  const footerSupportWa = document.getElementById('footer-support-whatsapp');
+  const successSupportDisplay = document.getElementById('success-support-display');
+  const successSupportCopy = document.getElementById('success-support-copy');
+  const successSupportWa = document.getElementById('success-support-whatsapp');
+
+  if (footerSupportDisplay) footerSupportDisplay.textContent = supportDisplay;
+  if (footerSupportCopy) footerSupportCopy.dataset.copy = supportDigits;
+  if (footerSupportWa) footerSupportWa.href = supportWaUrl;
+  if (successSupportDisplay) successSupportDisplay.textContent = supportDisplay;
+  if (successSupportCopy) successSupportCopy.dataset.copy = supportDigits;
+  if (successSupportWa) successSupportWa.href = supportWaUrl;
 
   if (footerDelivery) {
     footerDelivery.textContent = `رسوم التوصيل: ${formatPrice(deliveryFee)}`;
@@ -202,7 +234,7 @@ function applyStoreStatusUI() {
     catNav.classList.remove('hidden');
     catalogSec.classList.remove('hidden');
     if (proceedBtn) proceedBtn.disabled = false;
-    if (submitBtn) submitBtn.disabled = false;
+    updateCheckoutSubmitState();
   }
 }
 
@@ -689,6 +721,7 @@ function openCartDrawer(step = 'cart') {
   backdrop.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
   setDrawerStep(step);
+  fetchSettings();
 }
 
 function closeCartDrawer() {
@@ -720,6 +753,7 @@ function setDrawerStep(step) {
     coStep.classList.remove('hidden');
     updatePaymentMethodUI();
     renderCartAndCheckoutTotals();
+    updateCheckoutSubmitState();
   } else if (step === 'success') {
     title.textContent = 'تم تأكيد الطلب';
     sucStep.classList.remove('hidden');
@@ -862,6 +896,9 @@ function updatePaymentMethodUI() {
   const isCod = state.selectedPaymentMethod === 'COD';
   document.getElementById('electronic-pay-box').classList.toggle('hidden', isCod);
   document.getElementById('cod-pay-box').classList.toggle('hidden', !isCod);
+  const walletInput = document.getElementById('co-wallet-phone');
+  if (walletInput) walletInput.required = !isCod;
+  updateCheckoutSubmitState();
 }
 
 function handleReceiptFileChange(file) {
@@ -882,6 +919,7 @@ function handleReceiptFileChange(file) {
     document.getElementById('receipt-preview-wrap').classList.remove('hidden');
     document.getElementById('receipt-upload-zone').classList.add('hidden');
     hideCheckoutError();
+    updateCheckoutSubmitState();
   };
   reader.readAsDataURL(file);
 }
@@ -892,6 +930,50 @@ function clearReceiptImage() {
   document.getElementById('receipt-preview-img').src = '';
   document.getElementById('receipt-preview-wrap').classList.add('hidden');
   document.getElementById('receipt-upload-zone').classList.remove('hidden');
+  updateCheckoutSubmitState();
+}
+
+function getCheckoutValidationError() {
+  if (!state.settings.isOpen) {
+    return 'المتجر مغلق حالياً ولا يمكن إرسال الطلب.';
+  }
+  if (!state.cart || state.cart.length === 0) {
+    return 'سلة الطلبات فارغة.';
+  }
+
+  const customerName = document.getElementById('co-name').value.trim();
+  const customerPhone = document.getElementById('co-phone').value.trim();
+  const deliveryAddress = document.getElementById('co-address').value.trim();
+  const senderWalletPhone = document.getElementById('co-wallet-phone').value.trim();
+  const paymentMethod = state.selectedPaymentMethod;
+
+  if (!customerName || customerName.length < 2) {
+    return 'يرجى إدخال الاسم بالكامل.';
+  }
+  if (!customerPhone || customerPhone.replace(/\D/g, '').length < 8) {
+    return 'يرجى إدخال رقم هاتف صحيح.';
+  }
+  if (!deliveryAddress || deliveryAddress.length < 5) {
+    return 'يرجى إدخال عنوان التوصيل بالتفصيل.';
+  }
+
+  if (paymentMethod !== 'COD') {
+    if (!senderWalletPhone || senderWalletPhone.replace(/\D/g, '').length < 8) {
+      return 'يرجى إدخال رقم المحفظة المُحوّل منه.';
+    }
+    if (!state.receiptDataUrl || !state.receiptDataUrl.startsWith('data:image/')) {
+      return 'يرجى إرفاق صورة إيصال التحويل لإتمام الطلب.';
+    }
+  }
+
+  return null;
+}
+
+function updateCheckoutSubmitState() {
+  const submitBtn = document.getElementById('submit-order-btn');
+  if (!submitBtn) return;
+  const err = getCheckoutValidationError();
+  submitBtn.disabled = Boolean(err) || state.isSubmittingOrder;
 }
 
 function showCheckoutError(msg) {
@@ -909,8 +991,10 @@ async function handleCheckoutSubmit(e) {
   if (state.isSubmittingOrder) return;
   hideCheckoutError();
 
-  if (!state.settings.isOpen) {
-    showCheckoutError('المتجر مغلق حالياً ولا يمكن إرسال الطلب.');
+  const validationError = getCheckoutValidationError();
+  if (validationError) {
+    showCheckoutError(validationError);
+    updateCheckoutSubmitState();
     return;
   }
 
@@ -920,25 +1004,6 @@ async function handleCheckoutSubmit(e) {
   const deliveryNotes = document.getElementById('co-notes').value.trim();
   const senderWalletPhone = document.getElementById('co-wallet-phone').value.trim();
   const paymentMethod = state.selectedPaymentMethod;
-
-  if (!customerName || customerName.length < 2) {
-    return showCheckoutError('يرجى إدخال الاسم بالكامل.');
-  }
-  if (!customerPhone || customerPhone.replace(/\D/g, '').length < 8) {
-    return showCheckoutError('يرجى إدخال رقم هاتف صحيح.');
-  }
-  if (!deliveryAddress || deliveryAddress.length < 5) {
-    return showCheckoutError('يرجى إدخال عنوان التوصيل بالتفصيل.');
-  }
-
-  if (paymentMethod !== 'COD') {
-    if (!senderWalletPhone || senderWalletPhone.replace(/\D/g, '').length < 8) {
-      return showCheckoutError('يرجى إدخال رقم المحفظة أو الحساب المُحوّل منه.');
-    }
-    if (!state.receiptDataUrl) {
-      return showCheckoutError('يرجى رفع صورة إيصال التحويل لإتمام الطلب.');
-    }
-  }
 
   const submitBtn = document.getElementById('submit-order-btn');
   state.isSubmittingOrder = true;
@@ -1014,8 +1079,8 @@ async function handleCheckoutSubmit(e) {
     showCheckoutError(err.message || 'حدث خطأ أثناء إرسال الطلب.');
   } finally {
     state.isSubmittingOrder = false;
-    submitBtn.disabled = false;
     submitBtn.textContent = 'تأكيد وإرسال الطلب';
+    updateCheckoutSubmitState();
   }
 }
 
@@ -1025,7 +1090,6 @@ async function handleCheckoutSubmit(e) {
 function translatePayment(method) {
   const map = {
     'Vodafone Cash': 'فودافون كاش',
-    InstaPay: 'إنستاباي',
     'Orange Cash': 'أورانج كاش',
     'Etisalat Cash': 'اتصالات كاش',
     COD: 'الدفع عند الاستلام',
@@ -1297,6 +1361,12 @@ function bindEvents() {
   });
 
   document.getElementById('remove-receipt-btn').addEventListener('click', clearReceiptImage);
+  ['co-name', 'co-phone', 'co-address', 'co-wallet-phone'].forEach((id) => {
+    document.getElementById(id).addEventListener('input', () => {
+      hideCheckoutError();
+      updateCheckoutSubmitState();
+    });
+  });
   document.getElementById('checkout-form').addEventListener('submit', handleCheckoutSubmit);
 
   // Success buttons
@@ -1323,8 +1393,19 @@ function bindEvents() {
   // Support copy buttons (footer + success)
   document.querySelectorAll('.btn-copy-support').forEach((btn) => {
     btn.addEventListener('click', () => {
-      copyText(btn.dataset.copy || '0123456789', btn, btn.textContent);
+      const digits = btn.dataset.copy || cleanPhoneDigits(state.settings.supportNumber) || '0123456789';
+      copyText(digits, btn, btn.textContent);
     });
+  });
+
+  // Immediate refresh when user returns to tab/window
+  window.addEventListener('focus', () => {
+    fetchSettings();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      fetchSettings();
+    }
   });
 
   // BroadcastChannel updates

@@ -9,10 +9,14 @@ create table if not exists store_settings (
   customer_note text not null default '',
   delivery_fee numeric not null default 25,
   transfer_number text not null default '0123456789',
+  support_number text not null default '0 12 3456789',
   profit_reset_at timestamptz null,
   admin_pin_hash text null,
   updated_at timestamptz not null default now()
 );
+
+alter table public.store_settings
+  add column if not exists support_number text not null default '0 12 3456789';
 
 create table if not exists orders (
   id text primary key,
@@ -42,3 +46,14 @@ create table if not exists orders (
 create index if not exists idx_orders_created_at on orders (created_at desc);
 create index if not exists idx_orders_status on orders (status);
 create index if not exists idx_orders_customer_phone on orders (customer_phone);
+
+-- Security & permissions: lock down anon/authenticated access and grant full access to backend service_role
+alter table public.store_settings enable row level security;
+alter table public.orders enable row level security;
+
+revoke all on table public.store_settings from anon, authenticated;
+revoke all on table public.orders from anon, authenticated;
+
+grant usage on schema public to service_role;
+grant all on table public.store_settings to service_role;
+grant all on table public.orders to service_role;

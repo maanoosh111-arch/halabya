@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "id": "default",
+    "isOpen": true,
+    "openTime": "11:00 ص",
+    "closeTime": "02:00 ص",
+    "customerNote": "",
+    "deliveryFee": 25,
+    "transferNumber": "0123456789",
+    "supportNumber": "0 12 3456789",
+    "profitResetAt": null,
+    "adminPinHash": null,
+    "updatedAt": "2026-11-23T12:46:29.927+00:00"
+  },
+  "orders": [],
+  "nextOrderSeq": 1001
+}

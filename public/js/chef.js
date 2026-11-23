@@ -50,7 +50,6 @@ function formatDateAr(iso) {
 function translatePayment(method) {
   const map = {
     'Vodafone Cash': 'فودافون كاش',
-    InstaPay: 'إنستاباي',
     'Orange Cash': 'أورانج كاش',
     'Etisalat Cash': 'اتصالات كاش',
     COD: 'الدفع عند الاستلام',
@@ -703,7 +702,8 @@ function printThermalReceipt(order) {
   const foot = document.createElement('div');
   foot.className = 'thermal-foot';
   const f1 = document.createElement('div');
-  f1.textContent = 'خدمة العملاء والشكاوى: 0 12 3456789';
+  const supportNum = (state.settings && state.settings.supportNumber) || '0 12 3456789';
+  f1.textContent = `خدمة العملاء والشكاوى: ${supportNum}`;
   const f2 = document.createElement('div');
   f2.textContent = 'شكراً لطلبكم من حلبية';
   foot.append(f1, f2);
@@ -1002,19 +1002,27 @@ function syncSettingsUI() {
   document.getElementById('set-close-time').value = s.closeTime || '02:00 ص';
   document.getElementById('set-delivery-fee').value = String(s.deliveryFee ?? 25);
   document.getElementById('set-transfer-number').value = s.transferNumber || '0123456789';
+  document.getElementById('set-support-number').value = s.supportNumber || '0 12 3456789';
   document.getElementById('set-customer-note').value = s.customerNote || '';
 }
 
 async function handleSaveSettings(e) {
   e.preventDefault();
+  const saveBtn = document.getElementById('save-settings-btn');
   const payload = {
     isOpen: document.getElementById('set-is-open').checked,
     openTime: document.getElementById('set-open-time').value.trim(),
     closeTime: document.getElementById('set-close-time').value.trim(),
     deliveryFee: Number(document.getElementById('set-delivery-fee').value || 0),
     transferNumber: document.getElementById('set-transfer-number').value.trim(),
+    supportNumber: document.getElementById('set-support-number').value.trim(),
     customerNote: document.getElementById('set-customer-note').value.trim(),
   };
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'جاري الحفظ...';
+  }
 
   try {
     const res = await chefFetch('/api/chef/settings', {
@@ -1032,6 +1040,11 @@ async function handleSaveSettings(e) {
     showToast('تم حفظ الإعدادات وتطبيقها فوراً على المتجر');
   } catch (err) {
     showToast(err.message);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'حفظ الإعدادات وتطبيقها فوراً';
+    }
   }
 }
 
@@ -1229,17 +1242,24 @@ function bindEvents() {
 
   // Settings form dirty tracking (prevents 4s polling overwrite while admin is typing)
   const settingsForm = document.getElementById('chef-settings-form');
-  ['set-is-open', 'set-open-time', 'set-close-time', 'set-delivery-fee', 'set-transfer-number', 'set-customer-note'].forEach(
-    (id) => {
-      const el = document.getElementById(id);
-      el.addEventListener('input', () => {
-        state.settingsDirty = true;
-      });
-      el.addEventListener('change', () => {
-        state.settingsDirty = true;
-      });
-    }
-  );
+  [
+    'set-is-open',
+    'set-open-time',
+    'set-close-time',
+    'set-delivery-fee',
+    'set-transfer-number',
+    'set-support-number',
+    'set-customer-note',
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      state.settingsDirty = true;
+    });
+    el.addEventListener('change', () => {
+      state.settingsDirty = true;
+    });
+  });
   settingsForm.addEventListener('submit', handleSaveSettings);
 
   document.getElementById('chef-refresh-sheets-btn').addEventListener('click', () => {
