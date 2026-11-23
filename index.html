@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>حلبية للمشويات والمأكولات | اطلب أونلاين</title>
+    <meta
+      name="description"
+      content="حلبية - للمشويات والمأكولات. اطلب أشهى المشويات والحواوشي والسندوتشات على الفحم مع التوصيل السريع."
+    />
+    <meta property="og:title" content="حلبية للمشويات والمأكولات" />
+    <meta
+      property="og:description"
+      content="حلبية - للمشويات والمأكولات. اطلب أشهى المشويات والحواوشي والسندوتشات أونلاين."
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:image"
+      content="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="storefront-body">
+    <!-- Sticky Header -->
+    <header class="site-header" id="site-header">
+      <div class="container header-inner">
+        <button type="button" class="brand-btn" id="brand-reset-btn" aria-label="العودة للرئيسية وإعادة ضبط البحث">
+          <img
+            src="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+            alt="شعار حلبية"
+            class="header-logo"
+            referrerpolicy="no-referrer"
+          />
+          <span class="brand-title">حلبية للمشويات</span>
+        </button>
+
+        <div class="header-search-wrap" role="search">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input
+            type="search"
+            id="search-input"
+            class="search-input"
+            placeholder="ابحث عن مشويات، حواوشي، سندوتشات..."
+            aria-label="بحث في القائمة"
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            id="clear-search-btn"
+            class="clear-search-btn hidden"
+            aria-label="مسح البحث"
+            title="مسح البحث"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="header-actions">
+          <button type="button" id="my-orders-btn" class="btn-header-secondary">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+              <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+              <line x1="9" y1="12" x2="15" y2="12"></line>
+              <line x1="9" y1="16" x2="13" y2="16"></line>
+            </svg>
+            <span class="btn-label">طلباتي</span>
+          </button>
+
+          <button type="button" id="open-cart-btn" class="btn-header-cart" aria-label="سلة الطلبات">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <span class="btn-label">السلة</span>
+            <span class="cart-badge" id="cart-badge">0</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Prominent Closed-Store Alert Banner -->
+    <div id="closed-store-alert" class="closed-alert-bar hidden" role="alert">
+      <div class="container closed-alert-inner">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span id="closed-alert-text">المتجر مغلق حالياً — يفتح في 11:00 ص</span>
+      </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero-section">
+      <div class="hero-bg-wrap">
+        <img
+          src="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436465/watermarked_img_17393779045144724108_tvxcta.jpg"
+          alt="حلبية للمشويات والمأكولات"
+          class="hero-bg-img"
+          referrerpolicy="no-referrer"
+        />
+        <div class="hero-vignette"></div>
+      </div>
+    </section>
+
+    <!-- Store Closed Panel (Shown when isOpen === false) -->
+    <section id="store-closed-panel" class="container store-closed-section hidden">
+      <div class="store-closed-card">
+        <div class="closed-icon-badge">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <h2 class="closed-title">المتجر مغلق حالياً</h2>
+        <p class="closed-subtitle">نعتذر عن استقبال الطلبات في الوقت الحالي، يسعدنا خدمتكم خلال ساعات العمل الرسمية.</p>
+        <div class="closed-hours-grid">
+          <div class="closed-hour-box">
+            <span class="closed-hour-label">وقت الفتح</span>
+            <strong class="closed-hour-val" id="closed-open-time">11:00 ص</strong>
+          </div>
+          <div class="closed-hour-box">
+            <span class="closed-hour-label">وقت الإغلاق</span>
+            <strong class="closed-hour-val" id="closed-close-time">02:00 ص</strong>
+          </div>
+        </div>
+        <div id="closed-admin-note-wrap" class="closed-admin-note hidden">
+          <span class="note-label">ملاحظة الإدارة:</span>
+          <p id="closed-admin-note-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sticky Category Navigation -->
+    <nav class="category-nav-sticky" id="category-nav-bar" aria-label="تصنيفات القائمة">
+      <div class="container category-nav-container">
+        <div class="category-scroll-track" id="category-pills">
+          <!-- Populated dynamically by JS -->
+        </div>
+        <button type="button" id="refresh-catalog-btn" class="refresh-catalog-btn" title="تحديث القائمة من Google Sheets">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          <span>تحديث القائمة</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Catalog Section -->
+    <main class="container catalog-main" id="catalog-section">
+      <div class="catalog-section-header">
+        <div class="catalog-heading-group">
+          <h1 class="catalog-title">قائمة حلبية المختارة</h1>
+          <div class="catalog-active-subtitle" id="catalog-active-subtitle">
+            <span id="active-category-label">جميع الأصناف</span>
+            <span class="muted-count" id="active-category-count"></span>
+          </div>
+        </div>
+        <div class="catalog-total-meta" id="catalog-total-meta"></div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="catalog-loading" class="catalog-state-box">
+        <div class="spinner-ring"></div>
+        <p>جاري تحميل قائمة المشويات والمأكولات...</p>
+      </div>
+
+      <!-- Empty / Error Catalog State -->
+      <div id="catalog-empty" class="catalog-state-box hidden">
+        <img
+          src="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+          alt="حلبية"
+          class="empty-logo"
+          referrerpolicy="no-referrer"
+        />
+        <h3 id="empty-state-title">لا توجد منتجات متاحة حالياً</h3>
+        <p id="empty-state-desc">يرجى المحاولة مرة أخرى أو تحديث القائمة.</p>
+        <button type="button" id="empty-refresh-btn" class="btn-primary-orange">تحديث القائمة</button>
+      </div>
+
+      <!-- 1 / 2 / 3-Column Product Cards Grid -->
+      <div id="products-grid" class="products-grid"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div class="footer-brand-col">
+          <div class="footer-brand-lockup">
+            <img
+              src="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+              alt="شعار حلبية"
+              class="footer-logo"
+              referrerpolicy="no-referrer"
+            />
+            <div>
+              <h2 class="footer-brand-name">حلبية - للمشويات و المأكولات</h2>
+              <p class="footer-brand-tagline">طعم أصلي على الفحم · جودة عالية وتوصيل سريع</p>
+            </div>
+          </div>
+          <div class="footer-tags">
+            <span class="footer-meta-item" id="footer-delivery-tag">رسوم التوصيل: 25 ج.م</span>
+            <span class="footer-sep" aria-hidden="true">·</span>
+            <span class="footer-meta-item">الدفع عند الاستلام</span>
+            <span class="footer-sep" aria-hidden="true">·</span>
+            <span class="footer-meta-item">محافظ إلكترونية وإنستاباي</span>
+          </div>
+        </div>
+
+        <div class="footer-support-card">
+          <h3 class="support-card-title">خدمة العملاء والشكاوى</h3>
+          <p class="support-card-desc">للاستفسارات أو متابعة الطلبات أو الشكاوى، تواصل معنا مباشرة:</p>
+          <div class="support-number-row">
+            <span class="support-phone-display" dir="ltr">0 12 3456789</span>
+            <div class="support-actions">
+              <button type="button" class="btn-copy-support" data-copy="0123456789">
+                نسخ الرقم
+              </button>
+              <a
+                href="https://wa.me/20123456789"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-whatsapp"
+              >
+                واتساب
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="container footer-bottom">
+        <p>© 2026 حلبية للمشويات والمأكولات. جميع الحقوق محفوظة.</p>
+      </div>
+    </footer>
+
+    <!-- Product Detail Modal -->
+    <div id="product-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="pm-title">
+      <div class="modal-card product-detail-modal">
+        <button type="button" class="modal-close-btn" id="pm-close-btn" aria-label="إغلاق">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <div class="pm-layout">
+          <!-- Gallery Column -->
+          <div class="pm-gallery-col">
+            <div class="pm-main-stage" id="pm-main-stage">
+              <img id="pm-main-img" src="" alt="" class="pm-main-img" referrerpolicy="no-referrer" />
+              <div id="pm-img-fallback" class="img-fallback-box hidden">
+                <img
+                  src="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+                  alt="حلبية"
+                  referrerpolicy="no-referrer"
+                />
+              </div>
+              <button type="button" id="pm-prev-img" class="gallery-arrow gallery-arrow-prev hidden" aria-label="الصورة السابقة">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+              <button type="button" id="pm-next-img" class="gallery-arrow gallery-arrow-next hidden" aria-label="الصورة التالية">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+            </div>
+            <div class="pm-thumbs-strip" id="pm-thumbs-strip"></div>
+          </div>
+
+          <!-- Purchase Details Column -->
+          <div class="pm-info-col">
+            <span class="pm-category-tag" id="pm-category"></span>
+            <h2 class="pm-title" id="pm-title"></h2>
+            <p class="pm-description" id="pm-description"></p>
+
+            <div class="pm-price-box">
+              <span class="pm-price-label">سعر الوحدة</span>
+              <strong class="pm-unit-price" id="pm-unit-price"></strong>
+            </div>
+
+            <div class="pm-qty-row">
+              <span class="pm-qty-label">الكمية</span>
+              <div class="qty-stepper">
+                <button type="button" id="pm-qty-minus" class="qty-btn" aria-label="إنقاص الكمية">−</button>
+                <span id="pm-qty-val" class="qty-val">1</span>
+                <button type="button" id="pm-qty-plus" class="qty-btn" aria-label="زيادة الكمية">+</button>
+              </div>
+              <div class="pm-line-total-wrap">
+                <span class="pm-price-label">الإجمالي</span>
+                <strong class="pm-line-total" id="pm-line-total"></strong>
+              </div>
+            </div>
+
+            <div class="pm-cta-row">
+              <button type="button" id="pm-buy-now-btn" class="btn-primary-orange">اشتري الآن</button>
+              <button type="button" id="pm-add-cart-btn" class="btn-secondary-dark">أضف للسلة</button>
+            </div>
+
+            <!-- Shareable URL Section -->
+            <div class="pm-share-box">
+              <span class="pm-share-label">رابط مشاركة المنتج</span>
+              <div class="pm-share-input-row">
+                <input type="text" id="pm-share-url" class="pm-share-input" readonly dir="ltr" />
+                <button type="button" id="pm-copy-url-btn" class="btn-copy-url">نسخ الرابط</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart & Checkout Drawer -->
+    <div id="cart-drawer-backdrop" class="drawer-backdrop hidden" role="dialog" aria-modal="true" aria-label="سلة المشتريات والدفع">
+      <aside class="cart-drawer">
+        <div class="drawer-header">
+          <h2 class="drawer-title" id="drawer-title">سلة الطلبات</h2>
+          <button type="button" class="modal-close-btn static-close" id="close-cart-btn" aria-label="إغلاق السلة">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Step 1: Cart -->
+        <div id="drawer-step-cart" class="drawer-body">
+          <div id="cart-empty-view" class="cart-empty-view hidden">
+            <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <p>سلة الطلبات فارغة حالياً</p>
+            <button type="button" id="cart-browse-btn" class="btn-primary-orange">تصفح القائمة</button>
+          </div>
+
+          <div id="cart-filled-view" class="cart-filled-view">
+            <div class="cart-list-header">
+              <span id="cart-items-count-label">الأصناف المختارة</span>
+              <button type="button" id="clear-cart-btn" class="btn-text-danger">إفراغ السلة</button>
+            </div>
+            <div id="cart-items-list" class="cart-items-list"></div>
+
+            <div class="invoice-summary-card">
+              <div class="invoice-row">
+                <span>المجموع الفرعي</span>
+                <strong id="cart-subtotal">0 ج.م</strong>
+              </div>
+              <div class="invoice-row">
+                <span>رسوم التوصيل</span>
+                <strong id="cart-delivery-fee">25 ج.م</strong>
+              </div>
+              <div class="invoice-row invoice-grand">
+                <span>الإجمالي النهائي</span>
+                <strong id="cart-grand-total">25 ج.م</strong>
+              </div>
+            </div>
+
+            <button type="button" id="proceed-checkout-btn" class="btn-primary-orange btn-full">
+              المتابعة لإتمام الطلب
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Checkout -->
+        <div id="drawer-step-checkout" class="drawer-body hidden">
+          <button type="button" id="back-to-cart-btn" class="btn-back-step">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <span>العودة إلى السلة</span>
+          </button>
+
+          <form id="checkout-form" class="checkout-form" novalidate>
+            <div class="form-group">
+              <label for="co-name">الاسم بالكامل <span class="req">*</span></label>
+              <input type="text" id="co-name" class="form-input" placeholder="مثال: أحمد محمد" required />
+            </div>
+
+            <div class="form-group">
+              <label for="co-phone">رقم الهاتف <span class="req">*</span></label>
+              <input type="tel" id="co-phone" class="form-input" dir="ltr" placeholder="01xxxxxxxxx" required />
+            </div>
+
+            <div class="form-group">
+              <label for="co-address">عنوان التوصيل بالتفصيل <span class="req">*</span></label>
+              <textarea id="co-address" class="form-textarea" rows="2" placeholder="الشارع، رقم العمارة، الدور، الشقة، علامة مميزة" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="co-notes">ملاحظات التوصيل (اختياري)</label>
+              <input type="text" id="co-notes" class="form-input" placeholder="مثال: بدون شطة / الاتصال عند الوصول" />
+            </div>
+
+            <div class="form-group">
+              <label>اختر وسيلة الدفع <span class="req">*</span></label>
+              <div class="payment-methods-grid" id="payment-methods-grid">
+                <button type="button" class="payment-option-card active" data-method="Vodafone Cash" data-color="vodafone">
+                  <span class="pay-logo pay-logo-vodafone">V</span>
+                  <span class="pay-name">فودافون كاش</span>
+                </button>
+                <button type="button" class="payment-option-card" data-method="InstaPay" data-color="instapay">
+                  <span class="pay-logo pay-logo-instapay">IP</span>
+                  <span class="pay-name">إنستاباي</span>
+                </button>
+                <button type="button" class="payment-option-card" data-method="Orange Cash" data-color="orange">
+                  <span class="pay-logo pay-logo-orange">O</span>
+                  <span class="pay-name">أورانج كاش</span>
+                </button>
+                <button type="button" class="payment-option-card" data-method="Etisalat Cash" data-color="etisalat">
+                  <span class="pay-logo pay-logo-etisalat">E</span>
+                  <span class="pay-name">اتصالات كاش</span>
+                </button>
+                <button type="button" class="payment-option-card payment-option-cod" data-method="COD" data-color="cod">
+                  <span class="pay-logo pay-logo-cod">💵</span>
+                  <span class="pay-name">الدفع عند الاستلام</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Electronic Transfer Verification Box -->
+            <div id="electronic-pay-box" class="electronic-pay-box">
+              <div class="transfer-info-row">
+                <div>
+                  <span class="transfer-label">رقم التحويل الموحد</span>
+                  <strong class="transfer-number" id="co-transfer-number" dir="ltr">0123456789</strong>
+                </div>
+                <button type="button" id="co-copy-transfer-btn" class="btn-copy-small">نسخ الرقم</button>
+              </div>
+
+              <div class="transfer-amount-row">
+                <span>المبلغ المطلوب تحويله</span>
+                <strong id="co-transfer-amount" class="transfer-amount-highlight">0 ج.م</strong>
+              </div>
+
+              <div class="form-group">
+                <label for="co-wallet-phone">رقم المحفظة / الحساب المُحوّل منه <span class="req">*</span></label>
+                <input type="tel" id="co-wallet-phone" class="form-input" dir="ltr" placeholder="01xxxxxxxxx" />
+              </div>
+
+              <div class="form-group">
+                <label for="co-receipt-file">صورة إيصال التحويل <span class="req">*</span></label>
+                <label class="receipt-upload-zone" id="receipt-upload-zone" for="co-receipt-file">
+                  <input type="file" id="co-receipt-file" accept="image/*" class="sr-only" />
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span>اضغط لرفع صورة الإيصال (بحد أقصى 8 ميجابايت)</span>
+                </label>
+
+                <div id="receipt-preview-wrap" class="receipt-preview-wrap hidden">
+                  <img id="receipt-preview-img" src="" alt="معاينة إيصال الدفع" class="receipt-preview-img" />
+                  <button type="button" id="remove-receipt-btn" class="btn-remove-receipt">إزالة الصورة</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- COD Confirmation Card -->
+            <div id="cod-pay-box" class="cod-confirm-box hidden">
+              <div class="cod-confirm-title">تأكيد الدفع عند الاستلام</div>
+              <p class="cod-confirm-desc">
+                سيتم دفع المبلغ الإجمالي نقداً لمندوب التوصيل عند استلام الطلب شاملاً رسوم التوصيل:
+              </p>
+              <strong class="cod-confirm-total" id="co-cod-total">0 ج.م</strong>
+            </div>
+
+            <!-- Live Invoice -->
+            <div class="invoice-summary-card">
+              <div class="invoice-row">
+                <span>المجموع الفرعي</span>
+                <strong id="co-subtotal">0 ج.م</strong>
+              </div>
+              <div class="invoice-row">
+                <span>رسوم التوصيل</span>
+                <strong id="co-delivery-fee">25 ج.م</strong>
+              </div>
+              <div class="invoice-row invoice-grand">
+                <span>الإجمالي النهائي</span>
+                <strong id="co-grand-total">25 ج.م</strong>
+              </div>
+            </div>
+
+            <div id="checkout-error-msg" class="form-error-msg hidden" role="alert"></div>
+
+            <button type="submit" id="submit-order-btn" class="btn-primary-orange btn-full">
+              تأكيد وإرسال الطلب
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 3: Success -->
+        <div id="drawer-step-success" class="drawer-body hidden">
+          <div class="success-card">
+            <div class="success-icon-circle">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.6">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <h3 class="success-heading">تم استلام طلبك بنجاح</h3>
+            <div class="success-order-code-box">
+              <span>رقم الطلب</span>
+              <strong id="success-order-code" dir="ltr">ORD-1001</strong>
+            </div>
+
+            <div class="success-summary-details" id="success-summary-details"></div>
+
+            <div class="success-support-box">
+              <span>خدمة العملاء: <strong dir="ltr">0 12 3456789</strong></span>
+              <div class="support-actions">
+                <button type="button" class="btn-copy-support" data-copy="0123456789">نسخ</button>
+                <a href="https://wa.me/20123456789" target="_blank" rel="noopener noreferrer" class="btn-whatsapp">واتساب</a>
+              </div>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" id="track-in-orders-btn" class="btn-primary-orange btn-full">
+                تتبع في طلباتي
+              </button>
+              <button type="button" id="continue-shopping-btn" class="btn-secondary-dark btn-full">
+                مواصلة التسوق
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- My Orders Modal -->
+    <div id="orders-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="my-orders-title">
+      <div class="modal-card my-orders-modal">
+        <div class="modal-head-row">
+          <div>
+            <h2 class="modal-title" id="my-orders-title">طلباتي</h2>
+            <p class="modal-subtitle">متابعة حالة طلباتك مباشرة (يتم التحديث تلقائياً كل 4 ثوانٍ)</p>
+          </div>
+          <button type="button" class="modal-close-btn static-close" id="close-orders-modal-btn" aria-label="إغلاق">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <form id="orders-phone-lookup-form" class="orders-lookup-row">
+          <input
+            type="tel"
+            id="orders-lookup-phone"
+            class="form-input"
+            dir="ltr"
+            placeholder="أدخل رقم الهاتف لاسترجاع طلباتك من أي جهاز..."
+          />
+          <button type="submit" class="btn-secondary-dark">بحث</button>
+        </form>
+
+        <div id="my-orders-list" class="my-orders-list"></div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="/js/storefront.js"></script>
+  </body>
+</html>
