@@ -1464,10 +1464,18 @@ function bindEvents() {
   // Immediate refresh when user returns to tab/window
   window.addEventListener('focus', () => {
     fetchSettings();
+    const ordersModal = document.getElementById('orders-modal');
+    if (ordersModal && !ordersModal.classList.contains('hidden')) {
+      fetchMyOrders();
+    }
   });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       fetchSettings();
+      const ordersModal = document.getElementById('orders-modal');
+      if (ordersModal && !ordersModal.classList.contains('hidden')) {
+        fetchMyOrders();
+      }
     }
   });
 
@@ -1485,8 +1493,22 @@ async function init() {
   bindEvents();
   await Promise.all([fetchSettings(), fetchCatalog()]);
 
-  setInterval(fetchSettings, 5000);
-  setInterval(fetchMyOrders, 4000);
+  setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      fetchSettings();
+    }
+  }, 15000);
+
+  setInterval(() => {
+    const ordersModal = document.getElementById('orders-modal');
+    if (
+      document.visibilityState === 'visible' &&
+      ordersModal &&
+      !ordersModal.classList.contains('hidden')
+    ) {
+      fetchMyOrders();
+    }
+  }, 5000);
 }
 
 init();

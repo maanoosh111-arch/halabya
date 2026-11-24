@@ -280,7 +280,11 @@ async function enterDashboard() {
   await Promise.all([fetchOrdersAndSettings(), fetchAnalytics(), fetchChefCatalog()]);
 
   if (state.pollTimer) clearInterval(state.pollTimer);
-  state.pollTimer = setInterval(fetchOrdersAndSettings, 4000);
+  state.pollTimer = setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      fetchOrdersAndSettings();
+    }
+  }, 5000);
 }
 
 // =========================================================
@@ -1454,6 +1458,15 @@ function bindEvents() {
       if (state.authenticated) fetchOrdersAndSettings();
     };
   }
+
+  window.addEventListener('focus', () => {
+    if (state.authenticated) fetchOrdersAndSettings();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (state.authenticated && document.visibilityState === 'visible') {
+      fetchOrdersAndSettings();
+    }
+  });
 }
 
 updateAudioToggleUI();

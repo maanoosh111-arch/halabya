@@ -195,10 +195,10 @@ function validateReceiptDataUrl(dataUrl) {
 }
 
 function toChefOrderSummary(order) {
-  const { receiptImage, ...rest } = order;
+  const { receiptImage, receiptUnavailable, ...rest } = order;
   return {
     ...rest,
-    hasReceipt: Boolean(receiptImage),
+    hasReceipt: Boolean(receiptImage) || (order.paymentMethod !== 'COD' && !receiptUnavailable),
   };
 }
 
