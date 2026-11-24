@@ -27,6 +27,7 @@ const state = {
   pendingRejectOrderId: null,
   pendingConfirmAction: null,
   pollTimer: null,
+  isFetchingOrders: false,
 };
 
 function formatPrice(val) {
@@ -286,12 +287,24 @@ async function enterDashboard() {
 // DATA FETCHING & POLLING
 // =========================================================
 async function fetchOrdersAndSettings() {
-  if (!state.authenticated) return;
+  if (!state.authenticated || state.isFetchingOrders) return;
+  state.isFetchingOrders = true;
   try {
     const res = await chefFetch('/api/chef/orders');
     if (!res.ok) return;
     const data = await res.json();
     const incomingOrders = Array.isArray(data.orders) ? data.orders : [];
+
+    // Preserve any receiptImage already lazy-loaded into memory
+    const cachedReceiptById = new Map();
+    for (const prev of state.orders) {
+      if (prev.receiptImage) cachedReceiptById.set(prev.id, prev.receiptImage);
+    }
+    for (const ord of incomingOrders) {
+      if (!ord.receiptImage && cachedReceiptById.has(ord.id)) {
+        ord.receiptImage = cachedReceiptById.get(ord.id);
+      }
+    }
 
     // Detect newly arrived orders for audio chime & toast
     if (state.initialOrdersLoaded) {
@@ -335,6 +348,8 @@ async function fetchOrdersAndSettings() {
     }
   } catch {
     // Ignore transient polling failures
+  } finally {
+    state.isFetchingOrders = false;
   }
 }
 
@@ -496,7 +511,7 @@ function buildChefOrderCard(o) {
     codBadge.className = 'status-badge status-progress';
     codBadge.textContent = 'دفع عند الاستلام (COD)';
     payStrip.appendChild(codBadge);
-  } else if (o.receiptImage) {
+  } else if (o.hasReceipt || o.receiptImage) {
     const inspectBtn = document.createElement('button');
     inspectBtn.type = 'button';
     inspectBtn.className = 'btn-secondary-dark';
@@ -535,7 +550,7 @@ function buildChefOrderCard(o) {
     startBtn.className = 'btn-primary-orange';
     startBtn.style.height = '38px';
     startBtn.textContent = 'بدء التحضير';
-    startBtn.addEventListener('click', () => updateOrderAction(o.id, 'start'));
+    startBtn.addEventListener('click', () => updateOrderAction(o.id, 'start', '', startBtn));
 
     const rejBtn = document.createElement('button');
     rejBtn.type = 'button';
@@ -549,7 +564,7 @@ function buildChefOrderCard(o) {
     finBtn.type = 'button';
     finBtn.className = 'btn-emerald-solid';
     finBtn.textContent = 'تأكيد التسليم والتحصيل';
-    finBtn.addEventListener('click', () => updateOrderAction(o.id, 'finish'));
+    finBtn.addEventListener('click', () => updateOrderAction(o.id, 'finish', '', finBtn));
 
     const rejBtn = document.createElement('button');
     rejBtn.type = 'button';
@@ -564,7 +579,7 @@ function buildChefOrderCard(o) {
     archBtn.className = 'btn-secondary-dark';
     archBtn.style.height = '38px';
     archBtn.textContent = 'أرشفة الطلب';
-    archBtn.addEventListener('click', () => updateOrderAction(o.id, 'archive'));
+    archBtn.addEventListener('click', () => updateOrderAction(o.id, 'archive', '', archBtn));
     actions.appendChild(archBtn);
   }
 
@@ -633,7 +648,12 @@ async function triggerOrderWhatsappRelay(orderId, btnEl) {
   }
 }
 
-async function updateOrderAction(orderId, action, rejectionReason = '') {
+async function updateOrderAction(orderId, action, rejectionReason = '', btnEl = null) {
+  const prevText = btnEl ? btnEl.textContent : '';
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.textContent = 'جاري التنفيذ...';
+  }
   try {
     const res = await chefFetch(`/api/chef/orders/${encodeURIComponent(orderId)}`, {
       method: 'PATCH',
@@ -642,20 +662,39 @@ async function updateOrderAction(orderId, action, rejectionReason = '') {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'تعذر تحديث الطلب.');
 
+    if (data.order) {
+      const idx = state.orders.findIndex((o) => o.id === orderId);
+      if (idx !== -1) {
+        const cachedReceipt = state.orders[idx].receiptImage || '';
+        state.orders[idx] = {
+          ...data.order,
+          ...(cachedReceipt ? { receiptImage: cachedReceipt } : {}),
+        };
+      }
+      renderTabCounts();
+      renderActiveOrders();
+      renderArchiveTable();
+    } else {
+      void fetchOrdersAndSettings();
+    }
+
     if (ordersChannel) {
       ordersChannel.postMessage({ type: 'ORDER_UPDATED', orderId });
     }
     showToast('تم تحديث حالة الطلب');
-    await fetchOrdersAndSettings();
   } catch (err) {
     showToast(err.message);
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.textContent = prevText;
+    }
   }
 }
 
 // =========================================================
 // RECEIPT INSPECTOR & REJECT MODAL & CONFIRM MODAL
 // =========================================================
-function openReceiptModal(order) {
+async function openReceiptModal(order) {
   document.getElementById('rm-title').textContent = `إيصال الدفع — ${order.orderCode}`;
   document.getElementById('rm-subtitle').textContent = `${order.customerName} · ${translatePayment(
     order.paymentMethod
@@ -679,13 +718,32 @@ function openReceiptModal(order) {
   }
 
   const img = document.getElementById('rm-image');
-  img.src = order.receiptImage;
-
   const dl = document.getElementById('rm-download-btn');
-  dl.href = order.receiptImage;
-  dl.download = `receipt-${order.orderCode}.png`;
+  img.alt = `إيصال ${order.orderCode}`;
 
   document.getElementById('receipt-modal').classList.remove('hidden');
+
+  if (!order.receiptImage && order.hasReceipt) {
+    img.removeAttribute('src');
+    dl.removeAttribute('href');
+    try {
+      const res = await chefFetch(`/api/chef/orders/${encodeURIComponent(order.id)}/receipt`);
+      const data = await res.json();
+      if (res.ok && data.receiptImage) {
+        order.receiptImage = data.receiptImage;
+      } else {
+        showToast(data.error || 'تعذر تحميل صورة الإيصال.');
+      }
+    } catch {
+      showToast('تعذر تحميل صورة الإيصال.');
+    }
+  }
+
+  if (order.receiptImage) {
+    img.src = order.receiptImage;
+    dl.href = order.receiptImage;
+    dl.download = `receipt-${order.orderCode}.png`;
+  }
 }
 
 function closeReceiptModal() {
@@ -867,7 +925,7 @@ function renderArchiveTable() {
     actWrap.style.display = 'flex';
     actWrap.style.gap = '6px';
 
-    if (o.receiptImage) {
+    if (o.hasReceipt || o.receiptImage) {
       const rBtn = document.createElement('button');
       rBtn.type = 'button';
       rBtn.className = 'btn-copy-small';
@@ -1117,10 +1175,22 @@ async function handleSaveSettings(e) {
     state.settings = data.settings;
     state.settingsDirty = false;
     syncSettingsUI();
+    const clearedCount = Number(data.clearedArchiveCount || 0);
+    if (clearedCount > 0) {
+      state.orders = state.orders.filter((o) => !o.isArchived);
+      state.selectedArchiveIds.clear();
+      renderTabCounts();
+      renderArchiveTable();
+      if (ordersChannel) {
+        ordersChannel.postMessage({ type: 'ORDER_DELETED' });
+      }
+      showToast(`تم إغلاق استقبال الطلبات ومسح ${clearedCount} طلب من الأرشيف تلقائياً`);
+    } else {
+      showToast('تم حفظ الإعدادات وتطبيقها فوراً على المتجر');
+    }
     if (ordersChannel) {
       ordersChannel.postMessage({ type: 'SETTINGS_UPDATED' });
     }
-    showToast('تم حفظ الإعدادات وتطبيقها فوراً على المتجر');
   } catch (err) {
     showToast(err.message);
   } finally {

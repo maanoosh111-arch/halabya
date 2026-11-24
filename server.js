@@ -15,6 +15,7 @@ import {
   listPublicOrders,
   toPublicOrder,
   updateOrderById,
+  getOrderReceiptById,
   softDeleteArchivedOrders,
   checkDatabaseConnection,
 } from './lib/db.js';
@@ -193,6 +194,14 @@ function validateReceiptDataUrl(dataUrl) {
   return approxBytes <= 8 * 1024 * 1024;
 }
 
+function toChefOrderSummary(order) {
+  const { receiptImage, ...rest } = order;
+  return {
+    ...rest,
+    hasReceipt: Boolean(receiptImage),
+  };
+}
+
 async function startServer() {
   await initDatabase();
 
@@ -295,12 +304,18 @@ async function startServer() {
         items,
       } = req.body || {};
 
+      const normalizeDigits = (v) =>
+        String(v || '')
+          .trim()
+          .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+          .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+
       const cleanName = String(customerName || '').trim();
-      const cleanPhone = String(customerPhone || '').trim();
+      const cleanPhone = normalizeDigits(customerPhone);
       const cleanAddress = String(deliveryAddress || '').trim();
       const cleanNotes = String(deliveryNotes || '').trim();
       const cleanMethod = String(paymentMethod || '').trim();
-      const cleanWalletPhone = String(senderWalletPhone || '').trim();
+      const cleanWalletPhone = normalizeDigits(senderWalletPhone);
 
       if (!cleanName || cleanName.length < 2) {
         return res.status(400).json({ error: 'يرجى إدخال الاسم بالكامل.' });
@@ -389,8 +404,13 @@ async function startServer() {
         totalProfit,
       });
 
-      // Server-side WhatsApp notification relay (treats 202 and 409 as non-fatal/success)
-      await relayOrderToWhatsapp(created);
+      // Server-side WhatsApp notification relay (builtin queues in-process in ~1ms; external runs non-blocking)
+      const relayCfg = getWhatsappRelayConfig();
+      if (relayCfg && relayCfg.mode === 'external') {
+        void relayOrderToWhatsapp(created);
+      } else {
+        await relayOrderToWhatsapp(created);
+      }
 
       res.status(201).json({ order: toPublicOrder(created) });
     } catch (err) {
@@ -480,7 +500,7 @@ async function startServer() {
       const enrichedOrders = orders.map((o) => {
         const wa = waMap.get(o.orderCode);
         return {
-          ...o,
+          ...toChefOrderSummary(o),
           whatsappStatus: wa ? wa.status : 'none',
           whatsappLastError: wa ? wa.lastError : '',
           whatsappSentAt: wa ? wa.sentAt : null,
@@ -494,6 +514,18 @@ async function startServer() {
       });
     } catch (err) {
       res.status(500).json({ error: 'تعذر تحميل الطلبات.' });
+    }
+  });
+
+  app.get('/api/chef/orders/:id/receipt', requireChefAuth, async (req, res) => {
+    try {
+      const receiptImage = await getOrderReceiptById(req.params.id);
+      if (!receiptImage) {
+        return res.status(404).json({ error: 'صورة الإيصال غير متوفرة.' });
+      }
+      res.json({ receiptImage });
+    } catch (err) {
+      res.status(500).json({ error: 'تعذر تحميل صورة الإيصال.' });
     }
   });
 
@@ -566,7 +598,15 @@ async function startServer() {
       if (!updated) {
         return res.status(404).json({ error: 'الطلب غير موجود.' });
       }
-      res.json({ order: updated });
+      const wa = getOrderStatusMap().get(updated.orderCode);
+      res.json({
+        order: {
+          ...toChefOrderSummary(updated),
+          whatsappStatus: wa ? wa.status : 'none',
+          whatsappLastError: wa ? wa.lastError : '',
+          whatsappSentAt: wa ? wa.sentAt : null,
+        },
+      });
     } catch (err) {
       res.status(500).json({ error: 'تعذر تحديث حالة الطلب.' });
     }
@@ -685,7 +725,7 @@ async function startServer() {
           completedOrdersCount: finishedOrders.length,
           totalItemsSold,
         },
-        completedOrders: finishedOrders,
+        completedOrders: finishedOrders.map(toChefOrderSummary),
         soldProductsLog,
       });
     } catch (err) {
@@ -741,8 +781,10 @@ async function startServer() {
         return res.status(400).json({ error: 'يرجى إدخال رقم خدمة العملاء والشكاوى بشكل صحيح.' });
       }
 
+      const nextIsOpen = Boolean(isOpen);
+
       const updated = await updateSettings({
-        isOpen: Boolean(isOpen),
+        isOpen: nextIsOpen,
         openTime: String(openTime || '11:00 ص').trim(),
         closeTime: String(closeTime || '02:00 ص').trim(),
         customerNote: String(customerNote || '').trim(),
@@ -751,8 +793,17 @@ async function startServer() {
         supportNumber: cleanSupport,
       });
 
+      let clearedArchiveCount = 0;
+      if (!nextIsOpen) {
+        const allOrders = await listAllOrdersInternal();
+        const archivedIds = allOrders.filter((o) => o.isArchived).map((o) => o.id);
+        if (archivedIds.length > 0) {
+          clearedArchiveCount = await softDeleteArchivedOrders(archivedIds);
+        }
+      }
+
       const { adminPinHash, ...safeSettings } = updated;
-      res.json({ settings: safeSettings });
+      res.json({ settings: safeSettings, clearedArchiveCount });
     } catch (err) {
       res.status(500).json({ error: 'تعذر حفظ إعدادات المتجر.' });
     }
@@ -836,6 +887,7 @@ async function startServer() {
 
   queueWorker.start();
   void whatsappService.initializeIfSavedSession();
+  void getInternalCatalog({ fresh: false }).catch(() => {});
 
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Halabiya Grill server running at http://0.0.0.0:${PORT}`);

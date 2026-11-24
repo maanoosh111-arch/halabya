@@ -901,7 +901,7 @@ function updatePaymentMethodUI() {
   updateCheckoutSubmitState();
 }
 
-function compressImageToDataUrl(dataUrl, maxDim = 1600, quality = 0.84) {
+function compressImageToDataUrl(dataUrl, maxDim = 1280, quality = 0.78) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -920,7 +920,8 @@ function compressImageToDataUrl(dataUrl, maxDim = 1600, quality = 0.84) {
         return;
       }
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressed.length < dataUrl.length ? compressed : dataUrl);
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
@@ -938,14 +939,16 @@ function handleReceiptFileChange(file) {
     return;
   }
 
+  const mimeLower = file.type.toLowerCase();
   const supportedRelayTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-  const needsOptimization = file.size > 3.5 * 1024 * 1024 || !supportedRelayTypes.has(file.type.toLowerCase());
+  const needsOptimization =
+    (mimeLower !== 'image/gif' && file.size > 250 * 1024) || !supportedRelayTypes.has(mimeLower);
 
   const reader = new FileReader();
   reader.onload = async () => {
     let dataUrl = String(reader.result || '');
     if (needsOptimization && dataUrl.startsWith('data:image/')) {
-      dataUrl = await compressImageToDataUrl(dataUrl, 1600, 0.84);
+      dataUrl = await compressImageToDataUrl(dataUrl, 1280, 0.78);
     }
     state.receiptDataUrl = dataUrl;
     document.getElementById('receipt-preview-img').src = state.receiptDataUrl;
@@ -966,36 +969,48 @@ function clearReceiptImage() {
   updateCheckoutSubmitState();
 }
 
-function getCheckoutValidationError() {
+function normalizeDigits(str) {
+  return String(str || '')
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+}
+
+function getCheckoutValidationIssue() {
   if (!state.settings.isOpen) {
-    return 'المتجر مغلق حالياً ولا يمكن إرسال الطلب.';
+    return { message: 'المتجر مغلق حالياً ولا يمكن إرسال الطلب.', fieldId: null };
   }
   if (!state.cart || state.cart.length === 0) {
-    return 'سلة الطلبات فارغة.';
+    return { message: 'سلة الطلبات فارغة.', fieldId: null };
   }
 
   const customerName = document.getElementById('co-name').value.trim();
-  const customerPhone = document.getElementById('co-phone').value.trim();
+  const customerPhone = normalizeDigits(document.getElementById('co-phone').value.trim());
   const deliveryAddress = document.getElementById('co-address').value.trim();
-  const senderWalletPhone = document.getElementById('co-wallet-phone').value.trim();
+  const senderWalletPhone = normalizeDigits(document.getElementById('co-wallet-phone').value.trim());
   const paymentMethod = state.selectedPaymentMethod;
 
   if (!customerName || customerName.length < 2) {
-    return 'يرجى إدخال الاسم بالكامل.';
+    return { message: 'يرجى إدخال الاسم بالكامل.', fieldId: 'co-name' };
   }
   if (!customerPhone || customerPhone.replace(/\D/g, '').length < 8) {
-    return 'يرجى إدخال رقم هاتف صحيح.';
+    return { message: 'يرجى إدخال رقم هاتف صحيح (8 أرقام على الأقل).', fieldId: 'co-phone' };
   }
   if (!deliveryAddress || deliveryAddress.length < 5) {
-    return 'يرجى إدخال عنوان التوصيل بالتفصيل.';
+    return { message: 'يرجى إدخال عنوان التوصيل بالتفصيل (5 أحرف على الأقل).', fieldId: 'co-address' };
   }
 
   if (paymentMethod !== 'COD') {
     if (!senderWalletPhone || senderWalletPhone.replace(/\D/g, '').length < 8) {
-      return 'يرجى إدخال رقم المحفظة المُحوّل منه.';
+      return {
+        message: 'يرجى إدخال رقم المحفظة المُحوّل منه بالأرقام (8 أرقام على الأقل).',
+        fieldId: 'co-wallet-phone',
+      };
     }
     if (!state.receiptDataUrl || !state.receiptDataUrl.startsWith('data:image/')) {
-      return 'يرجى إرفاق صورة إيصال التحويل لإتمام الطلب.';
+      return {
+        message: 'يرجى إرفاق صورة إيصال التحويل لإتمام الطلب.',
+        fieldId: 'receipt-upload-zone',
+      };
     }
   }
 
@@ -1005,8 +1020,16 @@ function getCheckoutValidationError() {
 function updateCheckoutSubmitState() {
   const submitBtn = document.getElementById('submit-order-btn');
   if (!submitBtn) return;
-  const err = getCheckoutValidationError();
-  submitBtn.disabled = Boolean(err) || state.isSubmittingOrder;
+  const blocked =
+    state.isSubmittingOrder ||
+    !state.settings.isOpen ||
+    !state.cart ||
+    state.cart.length === 0;
+  submitBtn.disabled = blocked;
+  // Clear error banner live once the user fixes all validation issues
+  if (!getCheckoutValidationIssue()) {
+    hideCheckoutError();
+  }
 }
 
 function showCheckoutError(msg) {
@@ -1024,18 +1047,25 @@ async function handleCheckoutSubmit(e) {
   if (state.isSubmittingOrder) return;
   hideCheckoutError();
 
-  const validationError = getCheckoutValidationError();
-  if (validationError) {
-    showCheckoutError(validationError);
+  const issue = getCheckoutValidationIssue();
+  if (issue) {
+    showCheckoutError(issue.message);
+    if (issue.fieldId) {
+      const target = document.getElementById(issue.fieldId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof target.focus === 'function') target.focus();
+      }
+    }
     updateCheckoutSubmitState();
     return;
   }
 
   const customerName = document.getElementById('co-name').value.trim();
-  const customerPhone = document.getElementById('co-phone').value.trim();
+  const customerPhone = normalizeDigits(document.getElementById('co-phone').value.trim());
   const deliveryAddress = document.getElementById('co-address').value.trim();
   const deliveryNotes = document.getElementById('co-notes').value.trim();
-  const senderWalletPhone = document.getElementById('co-wallet-phone').value.trim();
+  const senderWalletPhone = normalizeDigits(document.getElementById('co-wallet-phone').value.trim());
   const paymentMethod = state.selectedPaymentMethod;
 
   const submitBtn = document.getElementById('submit-order-btn');

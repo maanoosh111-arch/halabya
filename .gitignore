@@ -7,4 +7,6 @@ coverage/
 .env*
 !.env.example
 .wwebjs_auth/
+.baileys_auth/
 data/
+.cache/
