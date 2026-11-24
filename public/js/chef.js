@@ -72,6 +72,21 @@ function getStatusBadgeInfo(status) {
   }
 }
 
+function getWhatsappRelayBadgeInfo(waStatus) {
+  switch (waStatus) {
+    case 'sent':
+      return { text: 'واتساب: تم الإرسال ✓', cls: 'status-finished' };
+    case 'sending':
+      return { text: 'واتساب: جاري الإرسال...', cls: 'status-progress' };
+    case 'pending':
+      return { text: 'واتساب: في الطابور', cls: 'status-pending' };
+    case 'failed':
+      return { text: 'واتساب: فشل الإرسال', cls: 'status-rejected' };
+    default:
+      return { text: 'واتساب: لم يُرسل بعد', cls: 'status-pending' };
+  }
+}
+
 function showToast(message) {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -296,6 +311,20 @@ async function fetchOrdersAndSettings() {
     if (data.settings) {
       state.settings = data.settings;
       syncSettingsUI();
+    }
+
+    const waBadge = document.getElementById('chef-header-wa-badge');
+    if (waBadge && data.whatsappConnectionStatus) {
+      if (data.whatsappConnectionStatus === 'connected') {
+        waBadge.textContent = 'واتساب: متصل';
+        waBadge.classList.remove('closed');
+      } else if (data.whatsappConnectionStatus === 'connecting') {
+        waBadge.textContent = 'واتساب: جاري الربط';
+        waBadge.classList.add('closed');
+      } else {
+        waBadge.textContent = 'واتساب: غير متصل';
+        waBadge.classList.add('closed');
+      }
     }
 
     renderTabCounts();
@@ -546,8 +575,62 @@ function buildChefOrderCard(o) {
   printBtn.addEventListener('click', () => printThermalReceipt(o));
   actions.appendChild(printBtn);
 
+  // WhatsApp notification status & manual send/retry control
+  const waRow = document.createElement('div');
+  waRow.className = 'chef-wa-strip';
+  const waInfo = getWhatsappRelayBadgeInfo(o.whatsappStatus);
+  const waLeft = document.createElement('div');
+  waLeft.className = 'chef-wa-left';
+  const waBadgeEl = document.createElement('span');
+  waBadgeEl.className = `status-badge ${waInfo.cls}`;
+  waBadgeEl.textContent = waInfo.text;
+  waLeft.appendChild(waBadgeEl);
+  if (o.whatsappLastError && o.whatsappStatus !== 'sent') {
+    const waErr = document.createElement('div');
+    waErr.className = 'muted-meta';
+    waErr.textContent = o.whatsappLastError;
+    waLeft.appendChild(waErr);
+  }
+  waRow.appendChild(waLeft);
+
+  if (o.whatsappStatus !== 'sent' && o.whatsappStatus !== 'sending') {
+    const waBtn = document.createElement('button');
+    waBtn.type = 'button';
+    waBtn.className = 'btn-wa-relay';
+    waBtn.textContent = o.whatsappStatus === 'none' ? 'إرسال للواتساب' : 'إعادة إرسال للواتساب';
+    waBtn.addEventListener('click', () => triggerOrderWhatsappRelay(o.id, waBtn));
+    waRow.appendChild(waBtn);
+  }
+
   card.appendChild(actions);
+  card.appendChild(waRow);
   return card;
+}
+
+async function triggerOrderWhatsappRelay(orderId, btnEl) {
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.textContent = 'جاري الإرسال...';
+  }
+  try {
+    const res = await chefFetch(`/api/chef/orders/${encodeURIComponent(orderId)}/whatsapp`, {
+      method: 'POST',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'تعذر إرسال الطلب إلى الواتساب.');
+    showToast(
+      data.alreadySent
+        ? 'تم إرسال هذا الطلب عبر الواتساب مسبقاً'
+        : 'تمت إضافة الطلب إلى طابور الإرسال في أداة الواتساب'
+    );
+    await fetchOrdersAndSettings();
+  } catch (err) {
+    showToast(err.message);
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.textContent = 'إعادة إرسال للواتساب';
+    }
+  }
 }
 
 async function updateOrderAction(orderId, action, rejectionReason = '') {

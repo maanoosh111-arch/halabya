@@ -18,6 +18,19 @@ import {
   softDeleteArchivedOrders,
   checkDatabaseConnection,
 } from './lib/db.js';
+import {
+  isWhatsappRelayConfigured,
+  getWhatsappRelayConfig,
+  relayOrderToWhatsapp,
+} from './lib/whatsapp-relay.js';
+import { createMedlinkRouter } from './lib/medlink/router.js';
+import { queueWorker } from './lib/medlink/queue.js';
+import {
+  getOrderByOrderId,
+  getOrderStatusMap,
+  retryOrderManually,
+} from './lib/medlink/store.js';
+import { whatsappService } from './lib/medlink/whatsapp.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -188,16 +201,21 @@ async function startServer() {
   app.use(express.json({ limit: '16mb' }));
   app.use(express.urlencoded({ extended: true, limit: '16mb' }));
 
-  app.use('/api', (_req, res, next) => {
+  app.use(['/api', '/med-link/api'], (_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     next();
   });
 
+  // --- Built-in /med-link WhatsApp Relay Router ---
+  app.use('/med-link', createMedlinkRouter({ requireAdminAuth: requireChefAuth }));
+
   // --- Public API Routes ---
   app.get('/api/health', async (_req, res) => {
     const db = await checkDatabaseConnection();
+    const relayCfg = getWhatsappRelayConfig();
+    const waState = whatsappService.getPublicState();
     res.json({
       ok: true,
       timestamp: new Date().toISOString(),
@@ -209,6 +227,11 @@ async function startServer() {
         ordersOk: db.ordersOk,
         supportNumberColumnOk: db.supportNumberColumnOk ?? false,
         httpStatus: db.httpStatus ?? null,
+      },
+      whatsappRelay: {
+        configured: isWhatsappRelayConfigured(),
+        mode: relayCfg ? relayCfg.mode : null,
+        whatsappStatus: waState.status,
       },
     });
   });
@@ -366,6 +389,9 @@ async function startServer() {
         totalProfit,
       });
 
+      // Server-side WhatsApp notification relay (treats 202 and 409 as non-fatal/success)
+      await relayOrderToWhatsapp(created);
+
       res.status(201).json({ order: toPublicOrder(created) });
     } catch (err) {
       console.error('[api/orders POST]', err);
@@ -450,10 +476,60 @@ async function startServer() {
         listAllOrdersInternal(),
         getSettings(),
       ]);
+      const waMap = getOrderStatusMap();
+      const enrichedOrders = orders.map((o) => {
+        const wa = waMap.get(o.orderCode);
+        return {
+          ...o,
+          whatsappStatus: wa ? wa.status : 'none',
+          whatsappLastError: wa ? wa.lastError : '',
+          whatsappSentAt: wa ? wa.sentAt : null,
+        };
+      });
       const { adminPinHash, ...safeSettings } = settings;
-      res.json({ orders, settings: safeSettings });
+      res.json({
+        orders: enrichedOrders,
+        settings: safeSettings,
+        whatsappConnectionStatus: whatsappService.getPublicState().status,
+      });
     } catch (err) {
       res.status(500).json({ error: 'تعذر تحميل الطلبات.' });
+    }
+  });
+
+  app.post('/api/chef/orders/:id/whatsapp', requireChefAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const orders = await listAllOrdersInternal();
+      const target = orders.find((o) => o.id === id || o.orderCode === id);
+      if (!target) {
+        return res.status(404).json({ error: 'الطلب غير موجود.' });
+      }
+
+      const existing = getOrderByOrderId(target.orderCode);
+      if (existing) {
+        if (existing.status === 'sent') {
+          return res.json({ ok: true, status: 'sent', alreadySent: true });
+        }
+        const retried = retryOrderManually(target.orderCode);
+        void queueWorker.trigger();
+        return res.status(202).json({
+          ok: true,
+          status: retried ? retried.status : 'pending',
+          retried: true,
+        });
+      }
+
+      const relayRes = await relayOrderToWhatsapp(target);
+      if (!relayRes.ok) {
+        return res.status(502).json({
+          error: 'تعذر تمرير الطلب إلى أداة الواتساب.',
+        });
+      }
+
+      res.status(202).json({ ok: true, status: 'pending', queued: true });
+    } catch (err) {
+      res.status(500).json({ error: 'حدث خطأ أثناء إرسال الطلب إلى الواتساب.' });
     }
   });
 
@@ -714,8 +790,21 @@ async function startServer() {
       }
     });
 
+    app.get(['/med-link', '/med-link/*'], async (req, res, next) => {
+      if (req.path.startsWith('/med-link/api/')) return next();
+      try {
+        const htmlPath = path.resolve(__dirname, 'med-link.html');
+        let template = fs.readFileSync(htmlPath, 'utf-8');
+        template = await vite.transformIndexHtml(req.originalUrl, template);
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
+
     app.get('*', async (req, res, next) => {
-      if (req.path.startsWith('/api/')) return next();
+      if (req.path.startsWith('/api/') || req.path.startsWith('/med-link/api/')) return next();
       try {
         const htmlPath = path.resolve(__dirname, 'index.html');
         let template = fs.readFileSync(htmlPath, 'utf-8');
@@ -734,15 +823,31 @@ async function startServer() {
       res.sendFile(path.join(distDir, 'chef.html'));
     });
 
+    app.get(['/med-link', '/med-link/*'], (req, res, next) => {
+      if (req.path.startsWith('/med-link/api/')) return next();
+      res.sendFile(path.join(distDir, 'med-link.html'));
+    });
+
     app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api/')) return next();
+      if (req.path.startsWith('/api/') || req.path.startsWith('/med-link/api/')) return next();
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  queueWorker.start();
+  void whatsappService.initializeIfSavedSession();
+
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Halabiya Grill server running at http://0.0.0.0:${PORT}`);
   });
+
+  const gracefulShutdown = async () => {
+    queueWorker.stop();
+    await whatsappService.shutdown();
+    server.close(() => process.exit(0));
+  };
+  process.once('SIGTERM', () => { void gracefulShutdown(); });
+  process.once('SIGINT', () => { void gracefulShutdown(); });
 }
 
 startServer().catch((err) => {

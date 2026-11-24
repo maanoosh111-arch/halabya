@@ -901,6 +901,32 @@ function updatePaymentMethodUI() {
   updateCheckoutSubmitState();
 }
 
+function compressImageToDataUrl(dataUrl, maxDim = 1600, quality = 0.84) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const scale = Math.min(maxDim / width, maxDim / height);
+        width = Math.max(1, Math.round(width * scale));
+        height = Math.max(1, Math.round(height * scale));
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 function handleReceiptFileChange(file) {
   if (!file) return;
   if (!file.type.startsWith('image/')) {
@@ -912,9 +938,16 @@ function handleReceiptFileChange(file) {
     return;
   }
 
+  const supportedRelayTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+  const needsOptimization = file.size > 3.5 * 1024 * 1024 || !supportedRelayTypes.has(file.type.toLowerCase());
+
   const reader = new FileReader();
-  reader.onload = () => {
-    state.receiptDataUrl = String(reader.result || '');
+  reader.onload = async () => {
+    let dataUrl = String(reader.result || '');
+    if (needsOptimization && dataUrl.startsWith('data:image/')) {
+      dataUrl = await compressImageToDataUrl(dataUrl, 1600, 0.84);
+    }
+    state.receiptDataUrl = dataUrl;
     document.getElementById('receipt-preview-img').src = state.receiptDataUrl;
     document.getElementById('receipt-preview-wrap').classList.remove('hidden');
     document.getElementById('receipt-upload-zone').classList.add('hidden');

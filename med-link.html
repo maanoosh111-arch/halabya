@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>أداة إشعارات الواتساب (/med-link) | حلبية للمشويات والمأكولات</title>
+    <meta
+      name="description"
+      content="واجهة إدارة إشعارات الواتساب وربط جلسة المطعم وطابور الطلبات — حلبية للمشويات والمأكولات."
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="chef-body">
+    <!-- Auth Gate (Shares Chef PIN / Session Cookie) -->
+    <main id="medlink-auth-screen" class="chef-auth-screen">
+      <div class="chef-login-card">
+        <div class="chef-login-brand">
+          <img
+            src="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+            alt="شعار حلبية"
+            class="chef-login-logo"
+            referrerpolicy="no-referrer"
+          />
+          <h1>أداة إشعارات الواتساب</h1>
+          <p id="medlink-auth-subtitle">ربط وإدارة إرسال طلبات المطعم عبر واتساب (/med-link)</p>
+        </div>
+
+        <form id="medlink-login-form" class="chef-login-form">
+          <div class="form-group">
+            <label for="medlink-pin-input" id="medlink-pin-label">رمز دخول الشيف (PIN)</label>
+            <div class="pin-input-wrap">
+              <input
+                type="password"
+                id="medlink-pin-input"
+                class="form-input"
+                dir="ltr"
+                placeholder="أدخل رمز الدخول..."
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                id="medlink-toggle-pin-btn"
+                class="pin-vis-btn"
+                aria-label="إظهار أو إخفاء الرمز"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div id="medlink-auth-error" class="form-error-msg hidden" role="alert"></div>
+
+          <button type="submit" id="medlink-auth-submit" class="btn-primary-orange btn-full">
+            دخول لأداة الواتساب
+          </button>
+        </form>
+
+        <div class="chef-login-footer">
+          <a href="/chef" class="btn-secondary-dark btn-full">الانتقال إلى لوحة الشيف</a>
+        </div>
+      </div>
+    </main>
+
+    <!-- Authenticated Med-Link WhatsApp Relay Dashboard -->
+    <div id="medlink-dashboard-screen" class="chef-dashboard hidden">
+      <header class="site-header chef-header">
+        <div class="container header-inner">
+          <div class="brand-btn static-brand">
+            <img
+              src="https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png"
+              alt="شعار حلبية"
+              class="header-logo"
+              referrerpolicy="no-referrer"
+            />
+            <div>
+              <span class="brand-title">أداة إشعارات الواتساب · حلبية</span>
+              <span class="chef-store-status-chip closed" id="ml-header-wa-badge">واتساب: غير متصل</span>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <a href="/chef" class="btn-header-secondary">
+              <span>عودة للوحة الشيف</span>
+            </a>
+
+            <button type="button" id="ml-logout-btn" class="btn-header-danger">
+              <span>تسجيل الخروج</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <nav class="category-nav-sticky chef-tabs-nav" aria-label="أقسام أداة الواتساب">
+        <div class="container category-nav-container">
+          <div class="category-scroll-track" id="ml-main-tabs">
+            <button type="button" class="category-pill active" data-tab="connection">
+              <span>ربط الواتساب و QR</span>
+            </button>
+            <button type="button" class="category-pill" data-tab="orders">
+              <span>سجل الإرسال والطابور</span>
+              <span class="pill-count" id="ml-tab-orders-count">0</span>
+            </button>
+            <button type="button" class="category-pill" data-tab="config">
+              <span>إعدادات الأرقام والمفاتيح</span>
+            </button>
+            <button type="button" class="category-pill" data-tab="integration">
+              <span>تفاصيل الربط والـ Webhook</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main class="container chef-main-content">
+        <!-- TAB 1: WhatsApp Connection & QR -->
+        <section id="ml-panel-connection" class="chef-tab-panel">
+          <div class="ml-connection-grid">
+            <div class="chef-panel-card ml-status-card">
+              <div class="panel-card-head">
+                <div>
+                  <h2>حالة جلسة واتساب ويب</h2>
+                  <p id="ml-status-detail" class="muted-meta">جاري فحص الحالة...</p>
+                </div>
+                <span id="ml-status-pill" class="status-badge status-rejected">غير متصل</span>
+              </div>
+
+              <div id="ml-qr-stage" class="ml-qr-stage">
+                <div id="ml-qr-placeholder" class="ml-qr-placeholder">
+                  <p>اضغط على <strong>«اتصال / توليد رمز QR»</strong> لتوليد رمز الربط ومسحه بتطبيق واتساب على هاتف المطعم.</p>
+                </div>
+                <img id="ml-qr-img" class="ml-qr-img hidden" alt="رمز QR لربط واتساب" />
+                <div id="ml-connected-box" class="ml-connected-box hidden">
+                  <div class="ml-connected-title">جلسة واتساب متصلة ونشطة</div>
+                  <div class="ml-connected-meta">
+                    <span>الحساب المتصل:</span>
+                    <strong id="ml-connected-name">—</strong>
+                  </div>
+                  <div class="ml-connected-meta">
+                    <span>رقم الهاتف:</span>
+                    <strong id="ml-connected-phone" dir="ltr">—</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div id="ml-last-error-box" class="rejection-reason-box hidden"></div>
+
+              <div class="ml-connection-actions">
+                <button type="button" id="ml-connect-btn" class="btn-primary-orange">
+                  اتصال / توليد رمز QR
+                </button>
+                <button type="button" id="ml-disconnect-btn" class="btn-danger-outline">
+                  قطع الاتصال وإلغاء الجلسة
+                </button>
+              </div>
+            </div>
+
+            <div class="chef-panel-card">
+              <div class="panel-card-head">
+                <div>
+                  <h2>اختبار الإرسال الفوري</h2>
+                  <p class="muted-meta">يرسل رسالة تجريبية إلى «رقم الواتساب المستهدف للطلبات» المحفوظ في الإعدادات.</p>
+                </div>
+              </div>
+
+              <div class="ml-recipient-preview">
+                <span>الرقم المستهدف الحالي:</span>
+                <strong id="ml-test-recipient-preview" dir="ltr">—</strong>
+              </div>
+
+              <form id="ml-test-form">
+                <div class="form-group">
+                  <label for="ml-test-message">نص رسالة الاختبار (اختياري)</label>
+                  <textarea
+                    id="ml-test-message"
+                    class="form-textarea"
+                    rows="3"
+                    placeholder="رسالة اختبار من أداة حلبية للواتساب — الاتصال يعمل بنجاح ✅"
+                  ></textarea>
+                </div>
+                <button type="submit" id="ml-test-send-btn" class="btn-emerald-solid btn-full">
+                  إرسال رسالة اختبار الآن
+                </button>
+              </form>
+
+              <div class="ml-steps-guide">
+                <h3>خطوات الربط السريع</h3>
+                <ol>
+                  <li>راجع أو عدّل «رقم الواتساب المستهدف للطلبات» من تبويب إعدادات الأرقام.</li>
+                  <li>اضغط «اتصال / توليد رمز QR» وانتظر ظهور الرمز.</li>
+                  <li>من واتساب هاتف العمل: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز ← امسح الرمز.</li>
+                  <li>بعد تحول الحالة إلى <strong>متصل</strong>، يتم إرسال كل طلب جديد + صورة الإيصال تلقائياً.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: Orders Queue & Activity Log -->
+        <section id="ml-panel-orders" class="chef-tab-panel hidden">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <span class="kpi-label">إجمالي الطلبات المستلمة</span>
+              <strong class="kpi-value" id="ml-kpi-total">0</strong>
+            </div>
+            <div class="kpi-card kpi-card-profit">
+              <span class="kpi-label">تم الإرسال بنجاح</span>
+              <strong class="kpi-value" id="ml-kpi-sent">0</strong>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">في الطابور / جاري الإرسال</span>
+              <strong class="kpi-value" id="ml-kpi-pending">0</strong>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">فشل بعد المحاولات</span>
+              <strong class="kpi-value" id="ml-kpi-failed">0</strong>
+            </div>
+          </div>
+
+          <div class="chef-toolbar-row">
+            <div class="status-filter-pills" id="ml-order-filters">
+              <button type="button" class="filter-chip active" data-status="all">الكل</button>
+              <button type="button" class="filter-chip" data-status="pending">قيد الانتظار</button>
+              <button type="button" class="filter-chip" data-status="sent">تم الإرسال</button>
+              <button type="button" class="filter-chip" data-status="failed">فشل</button>
+            </div>
+
+            <div class="ml-search-wrap">
+              <input
+                type="search"
+                id="ml-order-search"
+                class="form-input"
+                placeholder="بحث برقم الطلب أو اسم العميل أو الهاتف..."
+              />
+            </div>
+          </div>
+
+          <div id="ml-orders-list" class="ml-orders-grid"></div>
+
+          <div class="chef-panel-card ml-logs-card">
+            <div class="panel-card-head">
+              <h2>سجل أحداث الإرسال الأخير</h2>
+            </div>
+            <div id="ml-logs-list" class="ml-logs-list"></div>
+          </div>
+        </section>
+
+        <!-- TAB 3: Phone Config & Webhook Secret -->
+        <section id="ml-panel-config" class="chef-tab-panel hidden">
+          <div class="settings-layout-grid">
+            <form id="ml-config-form" class="chef-panel-card">
+              <div class="panel-card-head">
+                <div>
+                  <h2>إعدادات أرقام الواتساب</h2>
+                  <p class="muted-meta">تُستخدم هذه الأرقام لإرسال واستقبال إشعارات الطلبات وصور الإيصالات.</p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="ml-cfg-sender">رقم الواتساب المُرسل (المرجعي للجلسة)</label>
+                <input type="text" id="ml-cfg-sender" class="form-input" dir="ltr" required />
+              </div>
+
+              <div class="form-group">
+                <label for="ml-cfg-recipient">رقم الواتساب المستهدف للطلبات (Target Recipient)</label>
+                <input type="text" id="ml-cfg-recipient" class="form-input" dir="ltr" required />
+                <p class="muted-meta" id="ml-cfg-recipient-jid">معرف واتساب: —</p>
+              </div>
+
+              <div class="form-group">
+                <label for="ml-cfg-cc">كود الدولة الافتراضي</label>
+                <input type="text" id="ml-cfg-cc" class="form-input" dir="ltr" value="20" required />
+              </div>
+
+              <button type="submit" id="ml-cfg-save-btn" class="btn-primary-orange btn-full">
+                حفظ إعدادات الأرقام
+              </button>
+            </form>
+
+            <div class="chef-panel-card">
+              <div class="panel-card-head">
+                <div>
+                  <h2>مفتاح الأمان (X-Webhook-Secret)</h2>
+                  <p class="muted-meta">
+                    الربط الداخلي من المتجر ولوحة الشيف يعمل تلقائياً، ويمكنك توليد مفتاح خاص للربط الخارجي عبر API.
+                  </p>
+                </div>
+              </div>
+
+              <div class="ml-secret-status-box">
+                <span>حالة المفتاح الحالي:</span>
+                <strong id="ml-secret-source-label">جاري الفحص...</strong>
+              </div>
+
+              <div id="ml-secret-reveal-box" class="ml-secret-reveal hidden">
+                <div class="ml-secret-warn">
+                  احفظ هذا المفتاح الآن — يظهر مرة واحدة فقط لأسباب أمنية ولا يمكن إعادة عرضه لاحقاً:
+                </div>
+                <div class="pm-share-input-row">
+                  <input type="text" id="ml-secret-value" class="pm-share-input" dir="ltr" readonly />
+                  <button type="button" id="ml-secret-copy-btn" class="btn-copy-url">نسخ</button>
+                </div>
+              </div>
+
+              <button type="button" id="ml-generate-secret-btn" class="btn-secondary-dark btn-full">
+                توليد Webhook Secret جديد
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: Integration Endpoint Details -->
+        <section id="ml-panel-integration" class="chef-tab-panel hidden">
+          <div class="chef-panel-card">
+            <div class="panel-card-head">
+              <div>
+                <h2>تفاصيل الربط البرمجي مع المتجر ولوحة الشيف</h2>
+                <p class="muted-meta">تم دمج الأداة مباشرة داخل الموقع في المسار <span dir="ltr">/med-link</span>.</p>
+              </div>
+              <span class="status-badge status-finished">الربط الداخلي مفعل تلقائياً</span>
+            </div>
+
+            <div class="ml-integration-grid">
+              <div class="ml-endpoint-box">
+                <label>عنوان Webhook لاستقبال الطلبات (POST)</label>
+                <div class="pm-share-input-row">
+                  <input type="text" id="ml-webhook-url" class="pm-share-input" dir="ltr" readonly />
+                  <button type="button" id="ml-copy-webhook-btn" class="btn-copy-url">نسخ</button>
+                </div>
+              </div>
+
+              <div class="ml-endpoint-box">
+                <label>مسار الدخول المباشر للأداة</label>
+                <div class="pm-share-input-row">
+                  <input type="text" id="ml-dashboard-url" class="pm-share-input" dir="ltr" readonly />
+                  <button type="button" id="ml-copy-dashboard-btn" class="btn-copy-url">نسخ</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="ml-schema-note">
+              <h3>آلية العمل التلقائية</h3>
+              <ul>
+                <li>عند إتمام أي عميل لطلب جديد من المتجر، يقوم السيرفر بإرساله فوراً إلى طابور الأداة.</li>
+                <li>تُحوّل صورة إيصال المحفظة الإلكترونية إلى صورة مرفقة حقيقية داخل رسالة الواتساب مع تفاصيل الطلب كاملة (وليس كرابط نصي).</li>
+                <li>من لوحة الشيف (الطلبات النشطة)، يظهر لك مؤشر حالة الإرسال لكل طلب مع زر مباشر للإرسال أو إعادة الإرسال إلى الواتساب.</li>
+                <li>يستقبل المسار الخارجي طلبات JSON بالترويسة <code dir="ltr">X-Webhook-Secret</code> ويرد بـ <code dir="ltr">202</code> عند القبول و<code dir="ltr">409</code> عند تكرار نفس رقم الطلب.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <script type="module" src="/js/med-link.js"></script>
+  </body>
+</html>

@@ -9,6 +9,7 @@ export default defineConfig(() => {
         input: {
           main: path.resolve(__dirname, 'index.html'),
           chef: path.resolve(__dirname, 'chef.html'),
+          medlink: path.resolve(__dirname, 'med-link.html'),
         },
       },
     },
