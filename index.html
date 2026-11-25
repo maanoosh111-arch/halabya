@@ -26,7 +26,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Lalezar&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/styles.css" />
@@ -591,6 +591,59 @@
         <div id="my-orders-list" class="my-orders-list"></div>
       </div>
     </div>
+
+    <!-- Designer Credit Floating Badge -->
+    <aside
+      id="designer-credit-dock"
+      class="designer-credit-dock"
+      aria-label="تصميم بواسطة محمد حساني"
+    >
+      <div class="designer-credit-card" id="designer-credit-card">
+        <button
+          type="button"
+          id="designer-credit-close"
+          class="designer-credit-close"
+          aria-label="إغلاق بطاقة المصمم"
+          title="إغلاق"
+        >
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <span class="designer-credit-kicker">تصميم بواسطة</span>
+        <span class="designer-credit-name">محمد حساني</span>
+        <span class="designer-credit-cta-label">للتواصل</span>
+
+        <a
+          id="designer-whatsapp-link"
+          class="designer-credit-wa"
+          href="https://api.whatsapp.com/send/?phone=201204457813&text&type=phone_number&app_absent=0"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="تواصل عبر واتساب مع محمد حساني"
+        >
+          <img
+            src="https://res.cloudinary.com/rn7rovnn/image/upload/v1795637560/whatsapp-vector-logo-icon-logotype-vector-social-media_901408-404.png"
+            alt="واتساب"
+            referrerpolicy="no-referrer"
+          />
+        </a>
+      </div>
+
+      <button
+        type="button"
+        id="designer-credit-reopen"
+        class="designer-credit-reopen"
+        aria-label="إظهار بطاقة المصمم"
+        title="إظهار بطاقة المصمم"
+      >
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+    </aside>
 
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container" aria-live="polite"></div>

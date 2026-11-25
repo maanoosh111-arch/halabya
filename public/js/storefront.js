@@ -3,6 +3,9 @@ const BRAND_LOGO_URL =
 const CART_STORAGE_KEY = 'halabiya_cart_v1';
 const ORDER_CODES_KEY = 'halabiya_order_codes_v1';
 const CUSTOMER_PHONE_KEY = 'halabiya_customer_phone_v1';
+const DESIGNER_BADGE_COLLAPSED_KEY = 'halabiya_designer_badge_collapsed_v1';
+const DESIGNER_WHATSAPP_URL =
+  'https://api.whatsapp.com/send/?phone=201204457813&text&type=phone_number&app_absent=0';
 const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
 
 const ordersChannel =
@@ -1485,6 +1488,53 @@ function bindEvents() {
       fetchMyOrders();
       fetchSettings();
     };
+  }
+
+  initDesignerCreditWidget();
+}
+
+function initDesignerCreditWidget() {
+  const dock = document.getElementById('designer-credit-dock');
+  const closeBtn = document.getElementById('designer-credit-close');
+  const reopenBtn = document.getElementById('designer-credit-reopen');
+  const waLink = document.getElementById('designer-whatsapp-link');
+  if (!dock || !closeBtn || !reopenBtn) return;
+
+  const applyCollapsedState = (collapsed) => {
+    dock.classList.toggle('is-collapsed', collapsed);
+    try {
+      if (collapsed) {
+        sessionStorage.setItem(DESIGNER_BADGE_COLLAPSED_KEY, '1');
+      } else {
+        sessionStorage.removeItem(DESIGNER_BADGE_COLLAPSED_KEY);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  };
+
+  try {
+    if (sessionStorage.getItem(DESIGNER_BADGE_COLLAPSED_KEY) === '1') {
+      dock.classList.add('is-collapsed');
+    }
+  } catch {
+    // Ignore storage errors
+  }
+
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    applyCollapsedState(true);
+  });
+
+  reopenBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    applyCollapsedState(false);
+  });
+
+  if (waLink) {
+    waLink.href = DESIGNER_WHATSAPP_URL;
+    waLink.target = '_blank';
+    waLink.rel = 'noopener noreferrer';
   }
 }
 
