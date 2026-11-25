@@ -668,7 +668,7 @@ function updateModalQuantityUI() {
 
 function syncProductFromPath() {
   const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
-  if (!path || path === 'chef') return;
+  if (!path || ['887chef999', '887med-link999', 'chef', 'med-link'].includes(path)) return;
   const matched = state.products.find(
     (p) => p.slug.toLowerCase() === path.toLowerCase() || p.id === path
   );

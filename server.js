@@ -210,15 +210,17 @@ async function startServer() {
   app.use(express.json({ limit: '16mb' }));
   app.use(express.urlencoded({ extended: true, limit: '16mb' }));
 
-  app.use(['/api', '/med-link/api'], (_req, res, next) => {
+  app.use(['/api', '/887med-link999/api', '/med-link/api'], (_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     next();
   });
 
-  // --- Built-in /med-link WhatsApp Relay Router ---
-  app.use('/med-link', createMedlinkRouter({ requireAdminAuth: requireChefAuth }));
+  // --- Built-in WhatsApp Relay Router (/887med-link999/api/* and /med-link/api/*) ---
+  const medlinkRouter = createMedlinkRouter({ requireAdminAuth: requireChefAuth });
+  app.use('/887med-link999', medlinkRouter);
+  app.use('/med-link', medlinkRouter);
 
   // --- Public API Routes ---
   app.get('/api/health', async (_req, res) => {
@@ -820,6 +822,15 @@ async function startServer() {
   });
 
   // --- Frontend Serving (Dev Vite Middleware / Production dist/) ---
+  const HIDDEN_OLD_ADMIN_PATHS = [
+    '/chef',
+    '/chef/',
+    '/chef.html',
+    '/med-link',
+    '/med-link/',
+    '/med-link.html',
+  ];
+
   if (!IS_PROD) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
@@ -827,60 +838,71 @@ async function startServer() {
       appType: 'custom',
     });
 
+    const serveDevHtml = async (fileName, req, res, next) => {
+      try {
+        const htmlPath = path.resolve(__dirname, fileName);
+        let template = fs.readFileSync(htmlPath, 'utf-8');
+        template = await vite.transformIndexHtml(req.originalUrl, template);
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    };
+
+    // Hide old/guessable admin HTML paths before vite.middlewares can serve raw .html files
+    app.get(HIDDEN_OLD_ADMIN_PATHS, (req, res, next) => {
+      void serveDevHtml('index.html', req, res, next);
+    });
+
     app.use(vite.middlewares);
 
-    app.get('/chef', async (req, res, next) => {
-      try {
-        const htmlPath = path.resolve(__dirname, 'chef.html');
-        let template = fs.readFileSync(htmlPath, 'utf-8');
-        template = await vite.transformIndexHtml(req.originalUrl, template);
-        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
-      } catch (e) {
-        vite.ssrFixStacktrace(e);
-        next(e);
-      }
+    app.get(['/887chef999', '/887chef999/'], (req, res, next) => {
+      void serveDevHtml('chef.html', req, res, next);
     });
 
-    app.get(['/med-link', '/med-link/*'], async (req, res, next) => {
-      if (req.path.startsWith('/med-link/api/')) return next();
-      try {
-        const htmlPath = path.resolve(__dirname, 'med-link.html');
-        let template = fs.readFileSync(htmlPath, 'utf-8');
-        template = await vite.transformIndexHtml(req.originalUrl, template);
-        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
-      } catch (e) {
-        vite.ssrFixStacktrace(e);
-        next(e);
-      }
+    app.get(['/887med-link999', '/887med-link999/*'], (req, res, next) => {
+      if (req.path.startsWith('/887med-link999/api/')) return next();
+      void serveDevHtml('med-link.html', req, res, next);
     });
 
-    app.get('*', async (req, res, next) => {
-      if (req.path.startsWith('/api/') || req.path.startsWith('/med-link/api/')) return next();
-      try {
-        const htmlPath = path.resolve(__dirname, 'index.html');
-        let template = fs.readFileSync(htmlPath, 'utf-8');
-        template = await vite.transformIndexHtml(req.originalUrl, template);
-        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
-      } catch (e) {
-        vite.ssrFixStacktrace(e);
-        next(e);
+    app.get('*', (req, res, next) => {
+      if (
+        req.path.startsWith('/api/') ||
+        req.path.startsWith('/887med-link999/api/') ||
+        req.path.startsWith('/med-link/api/')
+      ) {
+        return next();
       }
+      void serveDevHtml('index.html', req, res, next);
     });
   } else {
     const distDir = path.resolve(__dirname, 'dist');
+
+    // Hide old/guessable admin HTML paths before express.static serves dist/*.html
+    app.get(HIDDEN_OLD_ADMIN_PATHS, (_req, res) => {
+      res.sendFile(path.join(distDir, 'index.html'));
+    });
+
     app.use(express.static(distDir, { index: false }));
 
-    app.get('/chef', (_req, res) => {
+    app.get(['/887chef999', '/887chef999/'], (_req, res) => {
       res.sendFile(path.join(distDir, 'chef.html'));
     });
 
-    app.get(['/med-link', '/med-link/*'], (req, res, next) => {
-      if (req.path.startsWith('/med-link/api/')) return next();
+    app.get(['/887med-link999', '/887med-link999/*'], (req, res, next) => {
+      if (req.path.startsWith('/887med-link999/api/')) return next();
       res.sendFile(path.join(distDir, 'med-link.html'));
     });
 
     app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api/') || req.path.startsWith('/med-link/api/')) return next();
+      if (
+        req.path.startsWith('/api/') ||
+        req.path.startsWith('/887med-link999/api/') ||
+        req.path.startsWith('/med-link/api/')
+      ) {
+        return next();
+      }
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }

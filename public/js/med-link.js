@@ -161,14 +161,14 @@ function populateIntegrationUrls() {
   const origin = window.location.origin;
   const webhookEl = document.getElementById('ml-webhook-url');
   const dashEl = document.getElementById('ml-dashboard-url');
-  if (webhookEl) webhookEl.value = `${origin}/med-link/api/orders`;
-  if (dashEl) dashEl.value = `${origin}/med-link`;
+  if (webhookEl) webhookEl.value = `${origin}/887med-link999/api/orders`;
+  if (dashEl) dashEl.value = `${origin}/887med-link999`;
 }
 
 async function fetchWhatsappStatus() {
   if (!state.authenticated) return;
   try {
-    const res = await medlinkFetch('/med-link/api/whatsapp/status');
+    const res = await medlinkFetch('/887med-link999/api/whatsapp/status');
     if (!res.ok) return;
     const data = await res.json();
     state.waState = data;
@@ -183,7 +183,7 @@ async function fetchWhatsappStatus() {
 async function fetchConfig() {
   if (!state.authenticated) return;
   try {
-    const res = await medlinkFetch('/med-link/api/config');
+    const res = await medlinkFetch('/887med-link999/api/config');
     if (!res.ok) return;
     const data = await res.json();
     state.config = data;
@@ -200,7 +200,7 @@ async function fetchOrdersQueue() {
       status: state.orderStatusFilter,
       search: state.orderSearch,
     });
-    const res = await medlinkFetch(`/med-link/api/orders?${params.toString()}`);
+    const res = await medlinkFetch(`/887med-link999/api/orders?${params.toString()}`);
     if (!res.ok) return;
     const data = await res.json();
     state.orders = Array.isArray(data.orders) ? data.orders : [];
@@ -457,7 +457,7 @@ function renderLogs() {
 
 async function handleRetryOrder(orderId) {
   try {
-    const res = await medlinkFetch(`/med-link/api/orders/${encodeURIComponent(orderId)}/retry`, {
+    const res = await medlinkFetch(`/887med-link999/api/orders/${encodeURIComponent(orderId)}/retry`, {
       method: 'POST',
     });
     const data = await res.json();
@@ -500,7 +500,7 @@ function bindEvents() {
   // Connect / Disconnect / Test
   document.getElementById('ml-connect-btn').addEventListener('click', async () => {
     try {
-      const res = await medlinkFetch('/med-link/api/whatsapp/connect', { method: 'POST' });
+      const res = await medlinkFetch('/887med-link999/api/whatsapp/connect', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'تعذر بدء اتصال الواتساب.');
       state.waState = data;
@@ -513,7 +513,7 @@ function bindEvents() {
 
   document.getElementById('ml-disconnect-btn').addEventListener('click', async () => {
     try {
-      const res = await medlinkFetch('/med-link/api/whatsapp/disconnect', { method: 'POST' });
+      const res = await medlinkFetch('/887med-link999/api/whatsapp/disconnect', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'تعذر قطع الاتصال.');
       state.waState = data;
@@ -531,7 +531,7 @@ function bindEvents() {
     btn.disabled = true;
     btn.textContent = 'جاري الإرسال...';
     try {
-      const res = await medlinkFetch('/med-link/api/whatsapp/test', {
+      const res = await medlinkFetch('/887med-link999/api/whatsapp/test', {
         method: 'POST',
         body: JSON.stringify({ message: msg || undefined }),
       });
@@ -583,7 +583,7 @@ function bindEvents() {
         recipientNumber: document.getElementById('ml-cfg-recipient').value.trim(),
         defaultCountryCode: document.getElementById('ml-cfg-cc').value.trim() || '20',
       };
-      const res = await medlinkFetch('/med-link/api/config', {
+      const res = await medlinkFetch('/887med-link999/api/config', {
         method: 'PUT',
         body: JSON.stringify(payload),
       });
@@ -604,7 +604,7 @@ function bindEvents() {
   // Generate webhook secret
   document.getElementById('ml-generate-secret-btn').addEventListener('click', async () => {
     try {
-      const res = await medlinkFetch('/med-link/api/config/webhook-secret', {
+      const res = await medlinkFetch('/887med-link999/api/config/webhook-secret', {
         method: 'POST',
       });
       const data = await res.json();
