@@ -1,3 +1,5 @@
+import { apiUrl } from '/js/config.js';
+
 const BRAND_LOGO_URL =
   'https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png';
 const CART_STORAGE_KEY = 'halabiya_cart_v1';
@@ -151,7 +153,7 @@ function formatWhatsAppUrl(phone) {
 
 async function fetchSettings() {
   try {
-    const res = await fetch('/api/settings', { cache: 'no-store' });
+    const res = await fetch(apiUrl('/api/settings'), { cache: 'no-store' });
     if (!res.ok) return;
     const data = await res.json();
     state.settings = {
@@ -254,7 +256,7 @@ async function fetchCatalog({ fresh = false } = {}) {
   }
 
   try {
-    const res = await fetch(`/api/products${fresh ? '?fresh=1' : ''}`, { cache: 'no-store' });
+    const res = await fetch(apiUrl(`/api/products${fresh ? '?fresh=1' : ''}`), { cache: 'no-store' });
     if (!res.ok) throw new Error('فشل تحميل المنتجات');
     const data = await res.json();
     state.categories = Array.isArray(data.categories) ? data.categories : [];
@@ -1077,7 +1079,7 @@ async function handleCheckoutSubmit(e) {
   submitBtn.textContent = 'جاري إرسال الطلب...';
 
   try {
-    const res = await fetch('/api/orders', {
+    const res = await fetch(apiUrl('/api/orders'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1190,7 +1192,7 @@ async function fetchMyOrders() {
     const qs = new URLSearchParams();
     if (codes) qs.set('codes', codes);
     if (phone) qs.set('phone', phone);
-    const res = await fetch(`/api/orders?${qs.toString()}`, { cache: 'no-store' });
+    const res = await fetch(apiUrl(`/api/orders?${qs.toString()}`), { cache: 'no-store' });
     if (!res.ok) return;
     const data = await res.json();
     renderMyOrdersList(Array.isArray(data.orders) ? data.orders : []);

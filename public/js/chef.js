@@ -1,3 +1,5 @@
+import { apiUrl } from '/js/config.js';
+
 const BRAND_LOGO_URL =
   'https://res.cloudinary.com/h74mxqsb/image/upload/v1795436487/95198036-2120-422b-af14-18355e8b50d3-Photoroom_hnnnve.png';
 const TOKEN_STORAGE_KEY = 'halabiya_chef_token_v1';
@@ -174,7 +176,7 @@ async function chefFetch(url, options = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(apiUrl(url), {
     ...options,
     headers,
     credentials: 'include',
@@ -203,7 +205,7 @@ function handleUnauthorized() {
 
 async function checkAuthStatus() {
   try {
-    const res = await fetch('/api/chef/auth/status', {
+    const res = await fetch(apiUrl('/api/chef/auth/status'), {
       headers: state.token ? { Authorization: `Bearer ${state.token}` } : {},
       credentials: 'include',
       cache: 'no-store',
@@ -245,7 +247,7 @@ async function handleLoginSubmit(e) {
 
   try {
     const endpoint = state.needsPinSetup ? '/api/chef/setup-pin' : '/api/chef/auth';
-    const res = await fetch(endpoint, {
+    const res = await fetch(apiUrl(endpoint), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1281,7 +1283,7 @@ function bindEvents() {
     inp.type = inp.type === 'password' ? 'text' : 'password';
   });
   document.getElementById('chef-logout-btn').addEventListener('click', async () => {
-    await fetch('/api/chef/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    await fetch(apiUrl('/api/chef/logout'), { method: 'POST', credentials: 'include' }).catch(() => {});
     handleUnauthorized();
   });
 

@@ -1,0 +1,12 @@
+/chef /index.html 200
+/chef/ /index.html 200
+/chef.html /index.html 200
+/med-link /index.html 200
+/med-link/ /index.html 200
+/med-link.html /index.html 200
+/887chef999 /887chef999/index.html 200
+/887chef999/ /887chef999/index.html 200
+/887med-link999 /887med-link999/index.html 200
+/887med-link999/ /887med-link999/index.html 200
+/887med-link999/* /887med-link999/index.html 200
+/* /index.html 200

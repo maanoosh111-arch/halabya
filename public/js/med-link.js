@@ -1,3 +1,5 @@
+import { apiUrl, getApiOrigin } from '/js/config.js';
+
 const TOKEN_STORAGE_KEY = 'halabiya_chef_token_v1';
 
 const state = {
@@ -50,7 +52,7 @@ async function medlinkFetch(url, options = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(apiUrl(url), {
     ...options,
     headers,
     credentials: 'include',
@@ -79,7 +81,7 @@ function handleUnauthorized() {
 
 async function checkAuthStatus() {
   try {
-    const res = await fetch('/api/chef/auth/status', {
+    const res = await fetch(apiUrl('/api/chef/auth/status'), {
       headers: state.token ? { Authorization: `Bearer ${state.token}` } : {},
       credentials: 'include',
       cache: 'no-store',
@@ -115,7 +117,7 @@ async function handleLoginSubmit(e) {
 
   try {
     const endpoint = state.needsPinSetup ? '/api/chef/setup-pin' : '/api/chef/auth';
-    const res = await fetch(endpoint, {
+    const res = await fetch(apiUrl(endpoint), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -158,11 +160,11 @@ async function enterDashboard() {
 }
 
 function populateIntegrationUrls() {
-  const origin = window.location.origin;
+  const origin = getApiOrigin();
   const webhookEl = document.getElementById('ml-webhook-url');
   const dashEl = document.getElementById('ml-dashboard-url');
   if (webhookEl) webhookEl.value = `${origin}/887med-link999/api/orders`;
-  if (dashEl) dashEl.value = `${origin}/887med-link999`;
+  if (dashEl) dashEl.value = `${window.location.origin}/887med-link999`;
 }
 
 async function fetchWhatsappStatus() {
@@ -477,7 +479,7 @@ function bindEvents() {
   });
 
   document.getElementById('ml-logout-btn').addEventListener('click', async () => {
-    await fetch('/api/chef/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    await fetch(apiUrl('/api/chef/logout'), { method: 'POST', credentials: 'include' }).catch(() => {});
     handleUnauthorized();
   });
 

@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import crypto from 'crypto';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getPublicCatalog, getInternalCatalog } from './lib/sheets.js';
@@ -37,7 +36,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT || 3000);
-const IS_PROD = process.env.NODE_ENV === 'production';
 
 // Ephemeral fallback signing key when SESSION_SECRET isn't configured in env
 const RUNTIME_SESSION_SECRET =
@@ -207,6 +205,37 @@ async function startServer() {
 
   const app = express();
   app.set('trust proxy', 1);
+
+  const allowedCorsOrigins = String(process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (allowedCorsOrigins.length > 0) {
+    app.use((req, res, next) => {
+      const origin = req.headers.origin;
+      if (
+        origin &&
+        (allowedCorsOrigins.includes('*') || allowedCorsOrigins.includes(origin))
+      ) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader(
+          'Access-Control-Allow-Headers',
+          'Content-Type, Authorization, X-Requested-With, X-Webhook-Secret'
+        );
+        res.setHeader(
+          'Access-Control-Allow-Methods',
+          'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+        );
+      }
+      if (req.method === 'OPTIONS') {
+        return res.status(204).end();
+      }
+      next();
+    });
+  }
+
   app.use(express.json({ limit: '16mb' }));
   app.use(express.urlencoded({ extended: true, limit: '16mb' }));
 
@@ -821,7 +850,12 @@ async function startServer() {
     }
   });
 
-  // --- Frontend Serving (Dev Vite Middleware / Production dist/) ---
+  // --- Pure Static HTML5 / CSS3 / Vanilla JS Serving (No Bundler / No Build Step) ---
+  const publicDir = path.resolve(__dirname, 'public');
+  const storefrontHtml = path.join(publicDir, 'index.html');
+  const chefHtml = path.join(publicDir, '887chef999', 'index.html');
+  const medlinkHtml = path.join(publicDir, '887med-link999', 'index.html');
+
   const HIDDEN_OLD_ADMIN_PATHS = [
     '/chef',
     '/chef/',
@@ -831,81 +865,32 @@ async function startServer() {
     '/med-link.html',
   ];
 
-  if (!IS_PROD) {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'custom',
-    });
+  // Hide old/guessable admin HTML paths before static middleware
+  app.get(HIDDEN_OLD_ADMIN_PATHS, (_req, res) => {
+    res.sendFile(storefrontHtml);
+  });
 
-    const serveDevHtml = async (fileName, req, res, next) => {
-      try {
-        const htmlPath = path.resolve(__dirname, fileName);
-        let template = fs.readFileSync(htmlPath, 'utf-8');
-        template = await vite.transformIndexHtml(req.originalUrl, template);
-        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
-      } catch (e) {
-        vite.ssrFixStacktrace(e);
-        next(e);
-      }
-    };
+  app.get(['/887chef999', '/887chef999/'], (_req, res) => {
+    res.sendFile(chefHtml);
+  });
 
-    // Hide old/guessable admin HTML paths before vite.middlewares can serve raw .html files
-    app.get(HIDDEN_OLD_ADMIN_PATHS, (req, res, next) => {
-      void serveDevHtml('index.html', req, res, next);
-    });
+  app.get(['/887med-link999', '/887med-link999/*'], (req, res, next) => {
+    if (req.path.startsWith('/887med-link999/api/')) return next();
+    res.sendFile(medlinkHtml);
+  });
 
-    app.use(vite.middlewares);
+  app.use(express.static(publicDir, { index: false }));
 
-    app.get(['/887chef999', '/887chef999/'], (req, res, next) => {
-      void serveDevHtml('chef.html', req, res, next);
-    });
-
-    app.get(['/887med-link999', '/887med-link999/*'], (req, res, next) => {
-      if (req.path.startsWith('/887med-link999/api/')) return next();
-      void serveDevHtml('med-link.html', req, res, next);
-    });
-
-    app.get('*', (req, res, next) => {
-      if (
-        req.path.startsWith('/api/') ||
-        req.path.startsWith('/887med-link999/api/') ||
-        req.path.startsWith('/med-link/api/')
-      ) {
-        return next();
-      }
-      void serveDevHtml('index.html', req, res, next);
-    });
-  } else {
-    const distDir = path.resolve(__dirname, 'dist');
-
-    // Hide old/guessable admin HTML paths before express.static serves dist/*.html
-    app.get(HIDDEN_OLD_ADMIN_PATHS, (_req, res) => {
-      res.sendFile(path.join(distDir, 'index.html'));
-    });
-
-    app.use(express.static(distDir, { index: false }));
-
-    app.get(['/887chef999', '/887chef999/'], (_req, res) => {
-      res.sendFile(path.join(distDir, 'chef.html'));
-    });
-
-    app.get(['/887med-link999', '/887med-link999/*'], (req, res, next) => {
-      if (req.path.startsWith('/887med-link999/api/')) return next();
-      res.sendFile(path.join(distDir, 'med-link.html'));
-    });
-
-    app.get('*', (req, res, next) => {
-      if (
-        req.path.startsWith('/api/') ||
-        req.path.startsWith('/887med-link999/api/') ||
-        req.path.startsWith('/med-link/api/')
-      ) {
-        return next();
-      }
-      res.sendFile(path.join(distDir, 'index.html'));
-    });
-  }
+  app.get('*', (req, res, next) => {
+    if (
+      req.path.startsWith('/api/') ||
+      req.path.startsWith('/887med-link999/api/') ||
+      req.path.startsWith('/med-link/api/')
+    ) {
+      return next();
+    }
+    res.sendFile(storefrontHtml);
+  });
 
   queueWorker.start();
   void whatsappService.initializeIfSavedSession();
